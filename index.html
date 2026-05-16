@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Moggle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;
+  --border:#2a2a2a;--border2:#333;
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --red:#E24B4A;--red2:#c93d3c;--red-bg:#1a0808;
+  --green:#1D9E75;--green-bg:#041a12;
+  --amber:#EF9F27;--amber-bg:#1a1100;
+  --radius:10px;--radius-lg:16px;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif}
+button{font-family:'Syne',sans-serif;cursor:pointer}
+input,textarea{font-family:'DM Mono',monospace}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.screen{display:none;min-height:100vh}.screen.active{display:flex;flex-direction:column}
+.btn{padding:10px 22px;border-radius:var(--radius);font-size:14px;font-weight:500;border:1px solid var(--border2);background:var(--bg3);color:var(--text);transition:all .15s;cursor:pointer}
+.btn:hover{background:var(--bg4)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--red2);border-color:var(--red2)}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:13px;outline:none}
+.field input:focus{border-color:var(--border2)}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* SETUP */
+#s-setup{align-items:center;justify-content:center;padding:2rem}
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:560px}
+.setup-logo{font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}.setup-logo span{color:var(--red)}
+.setup-card>p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem}
+.step-row{display:flex;gap:12px;margin-bottom:1rem;align-items:flex-start}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-b{font-size:13px;color:var(--text2);line-height:1.6}
+.step-b code{font-family:'DM Mono',monospace;background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--amber);font-size:12px}
+.step-b a{color:var(--amber)}
+.sql-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.7;margin:8px 0}
+.cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.setup-err{font-size:12px;color:var(--red);margin-top:6px;display:none;font-family:'DM Mono',monospace}
+/* LANDING */
+#s-landing{align-items:center;justify-content:center;padding:2rem;text-align:center;gap:1.75rem}
+.land-logo{font-size:72px;font-weight:800;letter-spacing:-4px;line-height:1}.land-logo span{color:var(--red)}
+.land-sub{font-size:15px;color:var(--text2);max-width:340px;line-height:1.6}
+.land-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.stats-row{display:flex;gap:2.5rem}
+.stat-n{font-size:28px;font-weight:800;text-align:center}.stat-l{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;text-align:center}
+.land-nav{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:10px;font-size:13px}
+.land-nav span{color:var(--text2);font-family:'DM Mono',monospace}
+/* ACCOUNT */
+#s-account{align-items:center;justify-content:center;padding:2rem}
+.acc-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:380px}
+.acc-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.acc-box>p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+.acc-tabs{display:flex;margin-bottom:1.5rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.acc-tab{flex:1;padding:9px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text2);transition:all .15s;cursor:pointer}
+.acc-tab.active{background:var(--bg3);color:var(--text)}
+.acc-err{font-size:13px;color:var(--red);margin-top:8px;display:none}
+.acc-ok{font-size:13px;color:var(--green);margin-top:8px;display:none}
+/* AUTH */
+#s-auth{align-items:center;justify-content:center;padding:2rem}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:400px}
+.auth-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.auth-box>p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
+.auth-tabs{display:flex;margin-bottom:1.5rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.auth-tab{flex:1;padding:9px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text2);transition:all .15s;cursor:pointer}
+.auth-tab.active{background:var(--bg3);color:var(--text)}
+.role-pills{display:flex;gap:8px;margin-bottom:1rem}
+.role-pill{flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;text-align:center;cursor:pointer;transition:all .15s}
+.role-pill.active{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.code-disp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;font-family:'DM Mono',monospace;font-size:22px;font-weight:500;letter-spacing:.15em;color:var(--amber);margin-bottom:1rem}
+.auth-err{font-size:13px;color:var(--red);margin-top:8px;display:none}
+/* LOBBY */
+#s-lobby{align-items:center;justify-content:center;padding:2rem;gap:1.4rem}
+.lob-hdr{text-align:center}.lob-hdr h2{font-size:24px;font-weight:800}.lob-hdr p{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.6}
+.cam-wrap{position:relative;width:290px;height:218px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.cam-wrap video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.scan-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frm{width:130px;height:165px;border:2px solid var(--red);border-radius:50% 50% 45% 45%;opacity:.7;animation:spulse 2s ease-in-out infinite}
+.scan-ln{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);animation:sln 2s linear infinite}
+@keyframes spulse{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.85;transform:scale(1.03)}}
+@keyframes sln{0%{top:20%}100%{top:80%}}
+.scan-res{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;width:290px;display:none}
+.score-big{font-size:50px;font-weight:800;color:var(--red);line-height:1;margin-bottom:2px}
+.score-lbl{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:.8rem}
+.feat-rows{display:flex;flex-direction:column;gap:6px}
+.feat-row{display:flex;align-items:center;gap:8px}
+.feat-nm{font-size:11px;color:var(--text2);width:76px;flex-shrink:0;font-family:'DM Mono',monospace}
+.feat-bar{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.feat-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.feat-val{font-size:11px;font-weight:500;width:26px;text-align:right}
+.pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:.8rem}
+.pc-box{background:var(--bg3);border-radius:var(--radius);padding:8px}
+.pc-box h4{font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.pc-box h4.pros{color:var(--green)}.pc-box h4.cons{color:var(--red)}
+.pc-box li{font-size:11px;color:var(--text2);margin-left:11px;margin-bottom:2px}
+.ak-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;width:290px}
+.ak-lbl{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.ak-box input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--text);font-size:12px;outline:none;font-family:'DM Mono',monospace}
+.ak-note{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px;line-height:1.5}
+.scan-err-msg{font-size:12px;color:var(--red);font-family:'DM Mono',monospace;display:none;text-align:center;max-width:290px}
+.priv-note{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center;max-width:290px;line-height:1.6}
+.lob-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* APP */
+#s-app{flex-direction:column}
+.topbar{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.tbar-logo{font-size:20px;font-weight:800;letter-spacing:-1px}.tbar-logo span{color:var(--red)}
+.room-bdg{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 8px}
+.tbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.elo-bdg{font-size:11px;font-family:'DM Mono',monospace;color:var(--amber);background:var(--amber-bg);border:1px solid #3a2800;border-radius:6px;padding:3px 9px}
+.user-bdg{font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);padding:3px 0}
+.nav-tabs{display:flex;gap:2px;padding:7px 18px 0;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.nav-tab{padding:7px 14px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text2);border-radius:7px 7px 0 0;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;cursor:pointer}
+.nav-tab:hover{color:var(--text)}.nav-tab.active{color:var(--text);border-bottom-color:var(--red)}
+.tab-pane{display:none;flex:1;overflow:auto}.tab-pane.active{display:flex;flex-direction:column}
+/* ARENA */
+.arena-layout{display:flex;flex:1;min-height:0}
+.arena-main{flex:1;padding:1.25rem 16px;display:flex;flex-direction:column;align-items:center;gap:1.2rem;overflow-y:auto}
+.arena-hdr{text-align:center}.arena-hdr h2{font-size:20px;font-weight:800}.arena-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
+.match-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:start;width:100%;max-width:660px}
+.fighter{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:all .2s;cursor:pointer}
+.fighter:hover{border-color:var(--border2)}.fighter.fw{border-color:var(--green);background:var(--green-bg);cursor:default}.fighter.fl{opacity:.45;cursor:default}
+.f-img{aspect-ratio:3/4;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--text3);max-height:195px;overflow:hidden}
+.f-body{padding:10px 12px}
+.f-name{font-size:13px;font-weight:700}.f-elo{font-size:10px;color:var(--amber);font-family:'DM Mono',monospace;margin-top:2px}
+.spill{display:inline-block;font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:99px;margin-top:5px}
+.sp-hi{background:var(--green-bg);color:var(--green);border:1px solid #0a3322}
+.sp-mid{background:var(--amber-bg);color:var(--amber);border:1px solid #2a1a00}
+.sp-lo{background:var(--red-bg);color:var(--red);border:1px solid #2a0808}
+.mf-rows{display:flex;flex-direction:column;gap:4px;margin-top:7px}
+.mf-row{display:flex;align-items:center;gap:5px;font-size:10px}
+.mf-lbl{color:var(--text3);width:56px;font-family:'DM Mono',monospace}
+.mf-bar{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.mf-fill{height:100%;border-radius:2px}
+.vs-col{display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:26px}
+.vs-txt{font-size:16px;font-weight:800;color:var(--text3)}
+.vc-cnt{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center}
+.vote-btns{display:flex;gap:8px;width:100%;max-width:660px}
+.vote-btn{flex:1;padding:11px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;cursor:pointer}
+.vote-btn:hover:not(:disabled){background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.skip-btn{padding:11px 16px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text3);font-size:13px;transition:all .15s;cursor:pointer}
+.skip-btn:hover{color:var(--text2)}
+.result-flash{text-align:center;display:none}
+.rf-w{font-size:17px;font-weight:800;color:var(--green)}.rf-s{font-size:12px;color:var(--text2);margin-top:3px}
+.wait-box{text-align:center;padding:2.5rem 1rem}
+.wait-ico{font-size:34px;margin-bottom:10px}
+.wait-box p{font-size:14px;color:var(--text2);margin-bottom:4px}.wait-box small{font-size:12px;color:var(--text3)}
+/* CHAT */
+.chat-sb{width:236px;border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.chat-top{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2)}
+.chat-top span{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;flex:1}
+.rpt-btn{font-size:11px;color:var(--red);background:var(--red-bg);border:1px solid #2a0808;border-radius:6px;padding:3px 9px;cursor:pointer}
+.chat-msgs{flex:1;overflow-y:auto;padding:.7rem 10px;display:flex;flex-direction:column;gap:7px}
+.msg{max-width:87%;padding:7px 10px;border-radius:10px;font-size:12px;line-height:1.5}
+.msg.mine{align-self:flex-end;background:var(--red);color:#fff;border-bottom-right-radius:3px}
+.msg.theirs{align-self:flex-start;background:var(--bg3);color:var(--text);border-bottom-left-radius:3px}
+.msg-nm{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:2px}
+.chat-form{display:flex;gap:6px;padding:7px 9px;border-top:1px solid var(--border);background:var(--bg2)}
+.chat-form textarea{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--text);font-size:12px;resize:none;outline:none;height:33px;line-height:1.4}
+.send-btn{padding:0 11px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;transition:all .15s;cursor:pointer}
+.send-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+/* GALLERY */
+.gal-wrap{padding:1.25rem 16px;flex:1;overflow-y:auto}
+.gal-hdr{text-align:center;margin-bottom:1.2rem}.gal-hdr h2{font-size:20px;font-weight:800}.gal-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
+.vote-cards{display:flex;flex-direction:column;gap:12px;max-width:660px;margin:0 auto}
+.vc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.vc-row{display:grid;grid-template-columns:1fr auto 1fr}
+.vc-side{cursor:pointer;transition:all .15s}.vc-side.vc-w{background:var(--green-bg)}
+.vc-thumb{height:120px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:34px}
+.vc-info{padding:8px 10px;font-size:12px;font-weight:600}
+.vc-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.vc-vs{display:flex;align-items:center;justify-content:center;padding:0 5px;font-size:11px;font-weight:700;color:var(--text3);background:var(--bg3)}
+.vc-foot{padding:7px 13px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.vc-vt{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;flex:1}
+.vc-won{font-size:11px;color:var(--green);font-family:'DM Mono',monospace}
+/* LEADERBOARD */
+.lb-wrap{padding:1.25rem 16px}
+.lb-hdr{margin-bottom:1.2rem}.lb-hdr h2{font-size:20px;font-weight:800}.lb-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
+.lb-list{display:flex;flex-direction:column;gap:5px;max-width:660px}
+.lb-row{display:flex;align-items:center;gap:11px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px}
+.lb-row.me{border-color:var(--red)}
+.lb-rk{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;width:26px;color:var(--text3)}
+.lb-rk.gold{color:var(--amber)}.lb-rk.silver{color:#aaa}.lb-rk.bronze{color:#cd7f32}
+.lb-av{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border)}
+.lb-inf{flex:1;min-width:0}.lb-nm{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-mt{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
+.lb-rt{text-align:right}.lb-elo{font-size:14px;font-weight:700;color:var(--amber)}.lb-wr{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.crown{font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid #3a2800;border-radius:99px;padding:2px 8px;font-family:'DM Mono',monospace}
+/* ROOM */
+.room-wrap{padding:1.25rem 16px;display:flex;flex-direction:column;gap:1rem;max-width:540px}
+.sect{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem}
+.sect h3{font-size:14px;font-weight:700;margin-bottom:4px}.sect>p{font-size:12px;color:var(--text2);margin-bottom:.9rem;line-height:1.6}
+.code-big{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;letter-spacing:.18em;color:var(--amber);margin:.35rem 0}
+.copy-btn{font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 9px;color:var(--text2);margin-left:8px;cursor:pointer}
+.copy-btn:hover{color:var(--text)}
+.mem-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--green)}.dot.off{background:var(--text3)}
+.mem-role{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin-left:auto}
+.danger{border-color:#2a0808}.danger h3{color:var(--red)}
+.hist-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.hist-info{flex:1}.hist-name{font-size:13px;font-weight:500}
+.hist-code{font-size:11px;font-family:'DM Mono',monospace;color:var(--amber);margin-top:2px}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:350px}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:5px}.modal>p{font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6}
+.rpt-opts{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
+.rpt-opt{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;transition:all .15s}
+.rpt-opt:hover{border-color:var(--red);color:var(--red)}
+.rpt-opt input{accent-color:var(--red)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+/* TOAST */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 16px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="s-setup" class="screen active">
+<div class="setup-card">
+  <div class="setup-logo">mog<span>.</span>gg <span style="font-size:13px;font-weight:400;color:var(--text3);letter-spacing:0">setup</span></div>
+  <p>Connect Supabase once. Run this new SQL first to add the accounts tables:</p>
+  <div class="sql-box" id="sql-block">-- accounts table (run this if you haven't already)
+create table if not exists accounts (
+  id uuid primary key default gen_random_uuid(),
+  auth_id uuid unique,
+  username text unique not null,
+  email text unique not null,
+  elo int default 1200,
+  wins int default 0,
+  losses int default 0,
+  face_overall int,
+  face_symmetry int,
+  face_jawline int,
+  face_eyes int,
+  face_skin int,
+  created_at timestamptz default now()
+);
+create table if not exists room_history (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid references accounts(id) on delete cascade,
+  room_id uuid,
+  room_code text,
+  room_name text,
+  created_at timestamptz default now()
+);
+-- add account_id to players if not exists
+alter table players add column if not exists account_id uuid references accounts(id);
+alter table rooms add column if not exists account_id uuid references accounts(id);
+alter table accounts enable row level security;
+alter table room_history enable row level security;
+create policy if not exists "open" on accounts for all using (true) with check (true);
+create policy if not exists "open" on room_history for all using (true) with check (true);</div>
+  <button class="btn" style="font-size:12px;padding:6px 13px;margin-bottom:1.25rem" onclick="copySQL()">copy SQL</button>
+  <div class="step-row"><div class="step-n">2</div><div class="step-b">Paste your Supabase <code>API URL</code> and <code>anon key</code> from <code>Settings &rarr; API</code>:</div></div>
+  <div class="cfg-row">
+    <div class="field"><label>API URL</label><input id="cfg-url" placeholder="https://xxx.supabase.co" /></div>
+    <div class="field"><label>Anon Key</label><input id="cfg-key" placeholder="eyJh..." type="password" /></div>
+  </div>
+  <div class="setup-err" id="setup-err"></div>
+  <button class="btn btn-primary" style="width:100%" id="setup-btn" onclick="saveSetup()">connect &amp; continue &rarr;</button>
+</div>
+</div>
+
+<!-- LANDING -->
+<div id="s-landing" class="screen" style="position:relative">
+  <div class="land-nav">
+    <span id="nav-user"></span>
+    <button class="btn" id="nav-login" style="padding:6px 14px;font-size:12px" onclick="showAccAuth('login')">log in</button>
+    <button class="btn btn-primary" id="nav-signup" style="padding:6px 14px;font-size:12px;display:none" onclick="showAccAuth('signup')">sign up</button>
+    <button class="btn" id="nav-logout" style="padding:6px 14px;font-size:12px;display:none" onclick="logOut()">log out</button>
+    <button class="btn" style="padding:6px 10px;font-size:12px;color:var(--text3)" onclick="show('s-setup')">&#9881;</button>
+  </div>
+  <div class="land-logo">mog<span>.</span>gg</div>
+  <p class="land-sub">your school's face-rating arena. scan, rank, find out who's mogging who.</p>
+  <div class="land-btns">
+    <button class="btn btn-primary" onclick="showAuth('join')">join a room</button>
+    <button class="btn" onclick="showAuth('create')">create a room</button>
+  </div>
+  <div class="stats-row">
+    <div><div class="stat-n" id="stat-rooms">-</div><div class="stat-l">rooms live</div></div>
+    <div><div class="stat-n" id="stat-players">-</div><div class="stat-l">online now</div></div>
+    <div><div class="stat-n" id="stat-votes">-</div><div class="stat-l">votes cast</div></div>
+  </div>
+</div>
+
+<!-- ACCOUNT -->
+<div id="s-account" class="screen">
+<div class="acc-box">
+  <div class="acc-tabs">
+    <button class="acc-tab active" id="acc-tab-login" onclick="accTab('login')">log in</button>
+    <button class="acc-tab" id="acc-tab-signup" onclick="accTab('signup')">sign up</button>
+  </div>
+  <div id="acc-login">
+    <h2>welcome back</h2>
+    <p>Log in to keep your ELO and room history across devices.</p>
+    <div class="field"><label>username</label><input id="li-username" placeholder="e.g. jordank" /></div>
+    <div class="field"><label>password</label><input id="li-pass" type="password" placeholder="your password" /></div>
+    <div class="acc-err" id="li-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" id="li-btn" onclick="doLogin()">log in &rarr;</button>
+  </div>
+  <div id="acc-signup" style="display:none">
+    <h2>create account</h2>
+    <p>Your ELO, face score, and room history will be saved forever.</p>
+    <div class="field"><label>username</label><input id="su-username" placeholder="e.g. jordank" /></div>
+    <div class="field"><label>email</label><input id="su-email" type="email" placeholder="your@email.com" /></div>
+    <div class="field"><label>password</label><input id="su-pass" type="password" placeholder="min 6 characters" /></div>
+    <div class="field"><label>confirm password</label><input id="su-pass2" type="password" placeholder="same again" /></div>
+    <div class="acc-err" id="su-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" id="su-btn" onclick="doSignup()">create account &rarr;</button>
+  </div>
+  <button class="btn" style="width:100%;margin-top:10px;font-size:13px;color:var(--text3)" onclick="show('s-landing')">&larr; back</button>
+</div>
+</div>
+
+<!-- AUTH (join/create room) -->
+<div id="s-auth" class="screen">
+<div class="auth-box">
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="atab-join" onclick="authTab('join')">join room</button>
+    <button class="auth-tab" id="atab-create" onclick="authTab('create')">create room</button>
+  </div>
+  <div id="av-join">
+    <h2>join a room</h2>
+    <p>Enter the code your teacher or friend shared.</p>
+    <div class="field"><label>your name</label><input id="jn-name" placeholder="e.g. Alex" /></div>
+    <div class="field"><label>room code</label><input id="jn-code" placeholder="e.g. WEST1234" style="text-transform:uppercase;letter-spacing:.1em" /></div>
+    <div class="auth-err" id="jn-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" id="jn-btn" onclick="joinRoom()">enter &rarr;</button>
+  </div>
+  <div id="av-create" style="display:none">
+    <h2>create a room</h2>
+    <p>Set up your arena. Share the code with your class.</p>
+    <div class="field"><label>your name</label><input id="cr-name" placeholder="e.g. Jordan" /></div>
+    <div class="field"><label>room name</label><input id="cr-rname" placeholder="e.g. Westside HS 2026" /></div>
+    <div class="field"><label>role</label>
+      <div class="role-pills">
+        <div class="role-pill active" id="rp-s" onclick="setRole('student')">student</div>
+        <div class="role-pill" id="rp-t" onclick="setRole('teacher')">teacher / admin</div>
+      </div>
+    </div>
+    <div class="auth-err" id="cr-err"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" id="cr-btn" onclick="createRoom()">create &rarr;</button>
+    <div id="cr-done" style="display:none;margin-top:1rem">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:8px">share this code:</p>
+      <div class="code-disp" id="cr-code">-</div>
+      <button class="btn btn-primary" style="width:100%" onclick="show('s-lobby')">continue to lobby &rarr;</button>
+    </div>
+  </div>
+  <button class="btn" style="width:100%;margin-top:10px;font-size:13px;color:var(--text3)" onclick="show('s-landing')">&larr; back</button>
+</div>
+</div>
+
+<!-- LOBBY -->
+<div id="s-lobby" class="screen">
+  <div class="lob-hdr">
+    <h2>face scan <span style="font-size:12px;color:var(--text3);font-weight:400">(optional)</span></h2>
+    <p>Image sent once to Claude Vision, then deleted immediately.<br>Only your scores are saved to the leaderboard.</p>
+  </div>
+  <div style="display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;align-items:flex-start">
+    <div>
+      <div class="cam-wrap">
+        <video id="lob-vid" autoplay playsinline muted></video>
+        <div class="scan-ov" id="scan-ov" style="display:none"><div class="scan-frm"></div><div class="scan-ln"></div></div>
+        <div id="cam-ph" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;color:var(--text3)">&#128247;</div>
+      </div>
+      <div style="display:flex;gap:7px;justify-content:center;margin-top:9px;flex-wrap:wrap">
+        <button class="btn" id="cam-btn" onclick="startCam()">enable camera</button>
+        <button class="btn btn-primary" id="scan-btn" style="display:none" onclick="doScan()">scan my face</button>
+        <button class="btn" id="rescan-btn" style="display:none" onclick="resetScan()">rescan</button>
+      </div>
+    </div>
+    <div class="scan-res" id="scan-res">
+      <div class="score-big" id="sr-score">-</div>
+      <div class="score-lbl">overall / 100</div>
+      <div id="sr-vibe" style="display:none;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:.7rem;font-style:italic"></div>
+      <div class="feat-rows" id="sr-feats"></div>
+      <div class="pc-grid" id="sr-pc"></div>
+      <p style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:.7rem">image deleted. only scores saved.</p>
+    </div>
+  </div>
+  <div class="ak-box">
+    <div class="ak-lbl">anthropic api key (for real AI scan)</div>
+    <input id="ak" type="password" placeholder="sk-ant-api03-..." />
+    <div class="ak-note">stays in this tab only. sent only to api.anthropic.com. never stored.</div>
+  </div>
+  <div class="scan-err-msg" id="scan-err"></div>
+  <p class="priv-note">image captured once, analyzed by claude vision, immediately deleted. nothing stored beyond scores.</p>
+  <div class="lob-btns">
+    <button class="btn" onclick="skipScan()">skip, enter without scan</button>
+    <button class="btn btn-primary" id="lob-enter" style="display:none" onclick="enterApp()">enter arena &rarr;</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="s-app" class="screen">
+  <div class="topbar">
+    <span class="tbar-logo">mog<span>.</span>gg</span>
+    <span class="room-bdg" id="app-code">-</span>
+    <div class="tbar-right">
+      <span class="user-bdg" id="app-user"></span>
+      <span class="elo-bdg" id="app-elo">ELO 1200</span>
+      <button class="btn" style="padding:5px 11px;font-size:12px" onclick="leaveRoom()">leave</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('arena',this)">arena</button>
+    <button class="nav-tab" onclick="switchTab('gallery',this)">vote gallery</button>
+    <button class="nav-tab" onclick="switchTab('lb',this)">leaderboard</button>
+    <button class="nav-tab" onclick="switchTab('room',this)">room</button>
+  </div>
+  <!-- ARENA -->
+  <div id="tab-arena" class="tab-pane active">
+    <div class="arena-layout">
+      <div class="arena-main">
+        <div class="arena-hdr"><h2>who's mogging?</h2><p>vote for the better face. elo updates live.</p></div>
+        <div id="a-loading" style="color:var(--text3);font-size:13px;padding:2rem 0"><div class="spinner"></div>loading matchup...</div>
+        <div id="a-waiting" class="wait-box" style="display:none">
+          <div class="wait-ico">&#9203;</div>
+          <p>waiting for players</p>
+          <small id="wait-sub">need at least 1 other player in the room</small>
+          <div style="margin-top:1rem"><button class="btn btn-primary" onclick="loadMatchup()">try again</button></div>
+        </div>
+        <div id="a-matchup" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
+          <div class="match-grid">
+            <div class="fighter" id="fl" onclick="castVote('left')">
+              <div class="f-img" id="fl-img">&#128100;</div>
+              <div class="f-body">
+                <div class="f-name" id="fl-nm">-</div>
+                <div class="f-elo" id="fl-el">ELO -</div>
+                <div id="fl-pl"></div>
+                <div class="mf-rows" id="fl-ft"></div>
+              </div>
+            </div>
+            <div class="vs-col">
+              <div class="vs-txt">VS</div>
+              <div class="vc-cnt" id="vc-cnt">0 votes</div>
+            </div>
+            <div class="fighter" id="fr" onclick="castVote('right')">
+              <div class="f-img" id="fr-img">&#128100;</div>
+              <div class="f-body">
+                <div class="f-name" id="fr-nm">-</div>
+                <div class="f-elo" id="fr-el">ELO -</div>
+                <div id="fr-pl"></div>
+                <div class="mf-rows" id="fr-ft"></div>
+              </div>
+            </div>
+          </div>
+          <div id="res-flash" class="result-flash">
+            <div class="rf-w" id="rf-w">-</div>
+            <div class="rf-s" id="rf-s">next matchup in 2s...</div>
+          </div>
+          <div class="vote-btns" id="vote-btns">
+            <button class="vote-btn" onclick="castVote('left')">&larr; left mogging</button>
+            <button class="skip-btn" onclick="loadMatchup()">skip</button>
+            <button class="vote-btn" onclick="castVote('right')">right mogging &rarr;</button>
+          </div>
+        </div>
+      </div>
+      <div class="chat-sb">
+        <div class="chat-top">
+          <span>live chat</span>
+          <button class="rpt-btn" onclick="openReport()">&#9872; report</button>
+        </div>
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="chat-form">
+          <textarea id="chat-in" placeholder="say something..." onkeydown="chatKey(event)"></textarea>
+          <button class="send-btn" onclick="sendChat()">&rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- GALLERY -->
+  <div id="tab-gallery" class="tab-pane">
+    <div class="gal-wrap">
+      <div class="gal-hdr"><h2>vote gallery</h2><p>community voting on all matchups in this room.</p></div>
+      <div class="vote-cards" id="vote-cards"><div style="color:var(--text3);font-size:13px"><div class="spinner"></div>loading...</div></div>
+    </div>
+  </div>
+  <!-- LEADERBOARD -->
+  <div id="tab-lb" class="tab-pane">
+    <div class="lb-wrap">
+      <div class="lb-hdr"><h2>leaderboard</h2><p id="lb-sub">ranked by elo</p></div>
+      <div class="lb-list" id="lb-list"><div style="color:var(--text3);font-size:13px"><div class="spinner"></div>loading...</div></div>
+    </div>
+  </div>
+  <!-- ROOM -->
+  <div id="tab-room" class="tab-pane">
+    <div class="room-wrap">
+      <div class="sect">
+        <h3>room code</h3><p>share with anyone you want to join.</p>
+        <div style="display:flex;align-items:center">
+          <span class="code-big" id="rm-code">-</span>
+          <button class="copy-btn" onclick="copyCode()">copy</button>
+        </div>
+      </div>
+      <div class="sect"><h3>members</h3><div id="mem-list"><div style="color:var(--text3);font-size:12px">loading...</div></div></div>
+      <div class="sect">
+        <h3>your room history</h3>
+        <p>rooms you've joined before. click to rejoin instantly.</p>
+        <div id="history-list"><div style="color:var(--text3);font-size:12px">loading...</div></div>
+      </div>
+      <div class="sect danger" id="admin-sect" style="display:none">
+        <h3>admin controls</h3><p>manage the room and review reports.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="viewReports()">view reports</button>
+          <button class="btn" onclick="resetElo()">reset elo</button>
+          <button class="btn" style="color:var(--red);border-color:#2a0808" onclick="closeRoom()">close room</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-bg" id="rpt-modal">
+  <div class="modal">
+    <h3>report matchup</h3>
+    <p>Reports go to the room admin for review.</p>
+    <div class="rpt-opts">
+      <label class="rpt-opt"><input type="radio" name="rpt" value="harassment"> harassment / bullying</label>
+      <label class="rpt-opt"><input type="radio" name="rpt" value="inappropriate"> inappropriate content</label>
+      <label class="rpt-opt"><input type="radio" name="rpt" value="fake"> fake / not their face</label>
+      <label class="rpt-opt"><input type="radio" name="rpt" value="other"> other</label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeReport()">cancel</button>
+      <button class="btn btn-primary" onclick="submitReport()">submit</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+var SB_URL = '', SB_KEY = '';
+var FC = {symmetry:'#378ADD',jawline:'#1D9E75',eyes:'#EF9F27',skin:'#D4537E'};
+var st = {
+  userId:null, accountId:null, user:null, role:'student',
+  roomId:null, roomCode:null, roomName:null,
+  elo:1200, myScore:null, matchup:null, voted:false, stream:null,
+  token:null
+};
+var chatPollTimer = null, lbPollTimer = null, lastChatIds = [];
+
+// ── SUPABASE REST + AUTH ──
+function sbReq(method, path, body, auth) {
+  var url = SB_URL + '/rest/v1/' + path;
+  var headers = {
+    'Content-Type': 'application/json',
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + (auth || st.token || SB_KEY),
+    'Prefer': method === 'POST' ? 'return=representation' : ''
+  };
+  var opts = {method: method, headers: headers};
+  if (body !== undefined && body !== null) opts.body = JSON.stringify(body);
+  return fetch(url, opts).then(function(r) {
+    if (r.status === 204) return {data: [], error: null};
+    return r.json().then(function(d) {
+      if (!r.ok) return {data: null, error: {message: d.message || d.error_description || JSON.stringify(d)}};
+      return {data: d, error: null};
+    });
+  });
+}
+function sbGet(table, filters, limit, order) {
+  var qs = '';
+  if (filters) {
+    var parts = [];
+    Object.keys(filters).forEach(function(k) { parts.push(k + '=eq.' + encodeURIComponent(filters[k])); });
+    if (parts.length) qs += parts.join('&');
+  }
+  if (order) qs += (qs ? '&' : '') + 'order=' + order;
+  if (limit) qs += (qs ? '&' : '') + 'limit=' + limit;
+  return sbReq('GET', table + (qs ? '?' + qs : ''));
+}
+function sbPost(table, data) { return sbReq('POST', table, Array.isArray(data) ? data : [data]); }
+function sbPatch(table, filters, data) {
+  var parts = [];
+  Object.keys(filters).forEach(function(k) { parts.push(k + '=eq.' + encodeURIComponent(filters[k])); });
+  return sbReq('PATCH', table + '?' + parts.join('&'), data);
+}
+function sbDelete(table, filters) {
+  var parts = [];
+  Object.keys(filters).forEach(function(k) { parts.push(k + '=eq.' + encodeURIComponent(filters[k])); });
+  return sbReq('DELETE', table + '?' + parts.join('&'));
+}
+
+// Supabase Auth API
+function authReq(path, body) {
+  return fetch(SB_URL + '/auth/v1/' + path, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'apikey': SB_KEY},
+    body: JSON.stringify(body)
+  }).then(function(r) { return r.json(); });
+}
+
+// ── BOOT ──
+window.addEventListener('load', function() {
+  var url = localStorage.getItem('sb_url'), key = localStorage.getItem('sb_key');
+  if (url && key) {
+    SB_URL = url; SB_KEY = key;
+    var saved = localStorage.getItem('mg_session');
+    if (saved) {
+      try {
+        var sess = JSON.parse(saved);
+        st.token = sess.token; st.accountId = sess.accountId;
+        st.user = sess.username; st.elo = sess.elo || 1200;
+        show('s-landing'); loadStats(); updateNavUser();
+        return;
+      } catch(e) { localStorage.removeItem('mg_session'); }
+    }
+    show('s-landing'); loadStats();
+  } else show('s-setup');
+});
+window.addEventListener('beforeunload', function() {
+  if (st.userId) sbPatch('players', {id: st.userId}, {online: false});
+});
+
+function saveSetup() {
+  var url = document.getElementById('cfg-url').value.trim().replace(/\/+$/, '');
+  var key = document.getElementById('cfg-key').value.trim();
+  var err = document.getElementById('setup-err');
+  if (!url || !key) { err.textContent = 'Fill in both fields.'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('setup-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>testing...';
+  SB_URL = url; SB_KEY = key;
+  sbGet('rooms', null, 1).then(function(res) {
+    if (res.error) throw new Error(res.error.message);
+    localStorage.setItem('sb_url', url); localStorage.setItem('sb_key', key);
+    err.style.display = 'none'; show('s-landing'); loadStats();
+    btn.disabled = false; btn.textContent = 'connect & continue \u2192';
+  }).catch(function(e) {
+    SB_URL = ''; SB_KEY = '';
+    err.textContent = 'Failed: ' + e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'connect & continue \u2192';
+  });
+}
+
+function loadStats() {
+  Promise.all([
+    sbGet('rooms', {active: true}, 100),
+    sbGet('players', {online: true}, 100),
+    sbGet('matchups', null, 500)
+  ]).then(function(results) {
+    document.getElementById('stat-rooms').textContent = (results[0].data || []).length;
+    document.getElementById('stat-players').textContent = (results[1].data || []).length;
+    var votes = (results[2].data || []).reduce(function(s, m) { return s + (m.votes_left || 0) + (m.votes_right || 0); }, 0);
+    document.getElementById('stat-votes').textContent = votes;
+  }).catch(function() {});
+}
+
+function updateNavUser() {
+  var el = document.getElementById('nav-user');
+  if (el) el.textContent = st.user ? st.user : '';
+  var logoutEl = document.getElementById('nav-logout');
+  if (logoutEl) logoutEl.style.display = st.user ? 'inline-block' : 'none';
+  var loginEl = document.getElementById('nav-login');
+  if (loginEl) loginEl.style.display = st.user ? 'none' : 'inline-block';
+}
+
+// ── SCREEN ──
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+// ── ACCOUNT AUTH ──
+function showAccAuth(mode) { show('s-account'); accTab(mode || 'login'); }
+function accTab(m) {
+  document.getElementById('acc-login').style.display = m === 'login' ? 'block' : 'none';
+  document.getElementById('acc-signup').style.display = m === 'signup' ? 'block' : 'none';
+  document.getElementById('acc-tab-login').classList.toggle('active', m === 'login');
+  document.getElementById('acc-tab-signup').classList.toggle('active', m === 'signup');
+}
+
+function doSignup() {
+  var username = document.getElementById('su-username').value.trim();
+  var email = document.getElementById('su-email').value.trim();
+  var pass = document.getElementById('su-pass').value;
+  var pass2 = document.getElementById('su-pass2').value;
+  var err = document.getElementById('su-err');
+  if (!username || !email || !pass) { err.textContent = 'Fill in all fields.'; err.style.display = 'block'; return; }
+  if (pass !== pass2) { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
+  if (pass.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('su-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>creating account...';
+  // Check username not taken
+  sbGet('accounts', {username: username}, 1).then(function(res) {
+    if (res.data && res.data.length > 0) throw new Error('Username already taken.');
+    return authReq('signup', {email: email, password: pass});
+  }).then(function(d) {
+    if (d.error || d.msg) throw new Error(d.error_description || d.msg || 'Signup failed.');
+    var authId = d.user && d.user.id;
+    var token = d.access_token || (d.session && d.session.access_token);
+    // Create account row
+    return sbPost('accounts', {auth_id: authId, username: username, email: email, elo: 1200, wins: 0, losses: 0}).then(function(res2) {
+      var acc = Array.isArray(res2.data) ? res2.data[0] : res2.data;
+      st.accountId = acc.id; st.user = username; st.token = token || SB_KEY; st.elo = 1200;
+      saveSession();
+      err.style.display = 'none';
+      toast('Account created! Welcome, ' + username);
+      updateNavUser();
+      show('s-landing');
+      btn.disabled = false; btn.textContent = 'create account \u2192';
+    });
+  }).catch(function(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'create account \u2192';
+  });
+}
+
+function doLogin() {
+  var username = document.getElementById('li-username').value.trim();
+  var pass = document.getElementById('li-pass').value;
+  var err = document.getElementById('li-err');
+  if (!username || !pass) { err.textContent = 'Fill in all fields.'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('li-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>logging in...';
+  // Look up account by username to get email
+  sbGet('accounts', {username: username}, 1).then(function(res) {
+    var accs = res.data || [];
+    if (!accs.length) throw new Error('Username not found.');
+    var acc = accs[0];
+    return authReq('token?grant_type=password', {email: acc.email, password: pass}).then(function(d) {
+      if (d.error || d.error_description) throw new Error(d.error_description || 'Wrong password.');
+      st.accountId = acc.id; st.user = acc.username; st.elo = acc.elo || 1200;
+      st.token = d.access_token || SB_KEY;
+      saveSession();
+      err.style.display = 'none';
+      toast('Welcome back, ' + acc.username + '!');
+      updateNavUser();
+      show('s-landing');
+      btn.disabled = false; btn.textContent = 'log in \u2192';
+    });
+  }).catch(function(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'log in \u2192';
+  });
+}
+
+function saveSession() {
+  localStorage.setItem('mg_session', JSON.stringify({
+    token: st.token, accountId: st.accountId, username: st.user, elo: st.elo
+  }));
+}
+
+function logOut() {
+  localStorage.removeItem('mg_session');
+  st.token = null; st.accountId = null; st.user = null; st.elo = 1200;
+  updateNavUser();
+  show('s-landing');
+  toast('Logged out.');
+}
+
+// ── ROOM AUTH ──
+function showAuth(m) { show('s-auth'); authTab(m); }
+function authTab(m) {
+  document.getElementById('av-join').style.display = m === 'join' ? 'block' : 'none';
+  document.getElementById('av-create').style.display = m === 'create' ? 'block' : 'none';
+  document.getElementById('atab-join').classList.toggle('active', m === 'join');
+  document.getElementById('atab-create').classList.toggle('active', m === 'create');
+  // Pre-fill name if logged in
+  if (st.user) {
+    var jn = document.getElementById('jn-name'); if (jn) jn.value = st.user;
+    var crn = document.getElementById('cr-name'); if (crn) crn.value = st.user;
+  }
+}
+function setRole(r) {
+  st.role = r;
+  document.getElementById('rp-s').classList.toggle('active', r === 'student');
+  document.getElementById('rp-t').classList.toggle('active', r === 'teacher');
+}
+function genCode() {
+  var w = ['WEST','EAST','NORTH','PARK','RIDGE','LAKE','OAK','PINE','CREST','SOUTH'];
+  return w[Math.floor(Math.random() * w.length)] + Math.floor(Math.random() * 9000 + 1000);
+}
+
+function createRoom() {
+  var name = document.getElementById('cr-name').value.trim() || st.user;
+  var rname = document.getElementById('cr-rname').value.trim();
+  var err = document.getElementById('cr-err');
+  if (!name || !rname) { err.textContent = 'Fill in all fields.'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('cr-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>creating...';
+  var code = genCode();
+  sbPost('rooms', {code: code, name: rname, creator_name: name, account_id: st.accountId || null}).then(function(res) {
+    if (res.error) throw new Error(res.error.message);
+    var room = Array.isArray(res.data) ? res.data[0] : res.data;
+    var playerElo = st.elo || 1200;
+    return sbPost('players', {room_id: room.id, name: name, role: st.role, account_id: st.accountId || null, elo: playerElo}).then(function(res2) {
+      if (res2.error) throw new Error(res2.error.message);
+      var player = Array.isArray(res2.data) ? res2.data[0] : res2.data;
+      st.userId = player.id; st.user = name; st.roomId = room.id; st.roomCode = code; st.roomName = rname;
+      // Save room to account history
+      if (st.accountId) saveRoomHistory(room.id, code, rname);
+      document.getElementById('cr-code').textContent = code;
+      document.getElementById('cr-done').style.display = 'block';
+      btn.style.display = 'none';
+    });
+  }).catch(function(e) {
+    err.textContent = 'Error: ' + e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'create \u2192';
+  });
+}
+
+function joinRoom() {
+  var name = document.getElementById('jn-name').value.trim() || st.user;
+  var code = document.getElementById('jn-code').value.trim().toUpperCase();
+  var err = document.getElementById('jn-err');
+  if (!name || !code) { err.textContent = 'Fill in all fields.'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('jn-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>joining...';
+  sbGet('rooms', {code: code, active: true}, 1).then(function(res) {
+    var rooms = res.data || [];
+    if (!rooms.length) throw new Error('Room not found. Check the code.');
+    var room = rooms[0];
+    // If logged in, check if they already have a player row in this room
+    if (st.accountId) {
+      return sbGet('players', {room_id: room.id, account_id: st.accountId}, 1).then(function(pres) {
+        var existing = (pres.data || [])[0];
+        if (existing) {
+          // Rejoin existing player row
+          return sbPatch('players', {id: existing.id}, {online: true}).then(function() {
+            st.userId = existing.id; st.user = existing.name; st.roomId = room.id;
+            st.roomCode = code; st.roomName = room.name; st.role = existing.role;
+            st.elo = existing.elo || 1200;
+            return null;
+          });
+        } else {
+          return sbPost('players', {room_id: room.id, name: name, role: 'student', account_id: st.accountId, elo: st.elo || 1200}).then(function(res2) {
+            if (res2.error) throw new Error(res2.error.message);
+            var player = Array.isArray(res2.data) ? res2.data[0] : res2.data;
+            st.userId = player.id; st.user = name; st.roomId = room.id;
+            st.roomCode = code; st.roomName = room.name; st.role = 'student';
+            saveRoomHistory(room.id, code, room.name);
+            return null;
+          });
+        }
+      });
+    } else {
+      return sbPost('players', {room_id: room.id, name: name, role: 'student', elo: 1200}).then(function(res2) {
+        if (res2.error) throw new Error(res2.error.message);
+        var player = Array.isArray(res2.data) ? res2.data[0] : res2.data;
+        st.userId = player.id; st.user = name; st.roomId = room.id;
+        st.roomCode = code; st.roomName = room.name; st.role = 'student';
+        return null;
+      });
+    }
+  }).then(function() {
+    err.style.display = 'none'; show('s-lobby');
+    btn.disabled = false; btn.textContent = 'enter \u2192';
+  }).catch(function(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'enter \u2192';
+  });
+}
+
+function saveRoomHistory(roomId, code, name) {
+  if (!st.accountId) return;
+  sbPost('room_history', {account_id: st.accountId, room_id: roomId, room_code: code, room_name: name});
+}
+
+function loadRoomHistory() {
+  if (!st.accountId) { document.getElementById('history-list').innerHTML = '<div style="color:var(--text3);font-size:13px">log in to see your room history</div>'; return; }
+  sbGet('room_history', {account_id: st.accountId}, 10, 'created_at.desc').then(function(res) {
+    var rows = res.data || [];
+    if (!rows.length) { document.getElementById('history-list').innerHTML = '<div style="color:var(--text3);font-size:13px">no rooms yet</div>'; return; }
+    document.getElementById('history-list').innerHTML = rows.map(function(r) {
+      return '<div class="hist-row"><div class="hist-info"><div class="hist-name">' + esc(r.room_name) + '</div><div class="hist-code">' + esc(r.room_code) + '</div></div><button class="btn" style="padding:5px 12px;font-size:12px" onclick="quickJoin(\'' + esc(r.room_code) + '\')">rejoin</button></div>';
+    }).join('');
+  });
+}
+
+function quickJoin(code) {
+  document.getElementById('jn-code').value = code;
+  document.getElementById('jn-name').value = st.user || '';
+  show('s-auth'); authTab('join');
+  joinRoom();
+}
+
+// ── LOBBY ──
+function startCam() {
+  navigator.mediaDevices.getUserMedia({video: {facingMode: 'user'}, audio: false}).then(function(stream) {
+    st.stream = stream;
+    document.getElementById('lob-vid').srcObject = stream;
+    document.getElementById('cam-ph').style.display = 'none';
+    document.getElementById('cam-btn').style.display = 'none';
+    document.getElementById('scan-btn').style.display = 'inline-block';
+  }).catch(function() { toast('Camera access denied. You can still enter without a scan.'); });
+}
+function stopCam() { if (st.stream) { st.stream.getTracks().forEach(function(t) { t.stop(); }); st.stream = null; } }
+
+function capFrame() {
+  var v = document.getElementById('lob-vid');
+  var c = document.createElement('canvas'); c.width = 320; c.height = 240;
+  var ctx = c.getContext('2d');
+  ctx.translate(320, 0); ctx.scale(-1, 1); ctx.drawImage(v, 0, 0, 320, 240);
+  var b64 = c.toDataURL('image/jpeg', 0.82).split(',')[1];
+  ctx.clearRect(0, 0, 320, 240); c.width = 1; c.height = 1;
+  return b64;
+}
+
+function doScan() {
+  var ak = (document.getElementById('ak').value || '').trim();
+  if (!ak) { showScanErr('Paste your Anthropic API key above to enable the AI scan.'); return; }
+  document.getElementById('scan-err').style.display = 'none';
+  document.getElementById('scan-ov').style.display = 'flex';
+  var btn = document.getElementById('scan-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>analyzing...';
+  var b64;
+  try { b64 = capFrame(); } catch(e) { showScanErr('Could not capture frame.'); btn.disabled = false; btn.textContent = 'scan my face'; return; }
+  var prompt = 'Analyze the face in this image. Respond ONLY with valid JSON, no markdown, no explanation. Schema: {"symmetry":<0-100>,"jawline":<0-100>,"eyes":<0-100>,"skin":<0-100>,"overall":<0-100>,"strengths":["feature","feature"],"weaknesses":["feature","feature"],"vibe":"2-3 word phrase"} Be honest but fair. If no face visible, all scores 0.';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ak,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      messages: [{role: 'user', content: [
+        {type: 'image', source: {type: 'base64', media_type: 'image/jpeg', data: b64}},
+        {type: 'text', text: prompt}
+      ]}]
+    })
+  }).then(function(res) {
+    b64 = null;
+    return res.json().then(function(d) {
+      if (!res.ok) throw new Error((d.error && d.error.message) || 'API error ' + res.status);
+      var raw = d.content.map(function(c) { return c.text || ''; }).join('').replace(/```json|```/g, '').trim();
+      var scores;
+      try { scores = JSON.parse(raw); } catch(e) { throw new Error('Could not parse AI response. Try again.'); }
+      return applyScan(scores);
+    });
+  }).then(function() {
+    document.getElementById('scan-ov').style.display = 'none';
+    btn.style.display = 'none';
+    document.getElementById('rescan-btn').style.display = 'inline-block';
+    document.getElementById('lob-enter').style.display = 'inline-block';
+  }).catch(function(e) {
+    b64 = null;
+    document.getElementById('scan-ov').style.display = 'none';
+    showScanErr(e.message || 'Scan failed. Try again.');
+    btn.disabled = false; btn.textContent = 'scan my face';
+  });
+}
+function showScanErr(m) { var e = document.getElementById('scan-err'); e.textContent = m; e.style.display = 'block'; }
+
+function applyScan(raw) {
+  var s = {symmetry: cl(raw.symmetry), jawline: cl(raw.jawline), eyes: cl(raw.eyes), skin: cl(raw.skin), overall: cl(raw.overall)};
+  st.myScore = s;
+  var newElo = Math.round(900 + s.overall * 4);
+  st.elo = newElo;
+  var pros = Array.isArray(raw.strengths) ? raw.strengths.slice(0, 2) : [];
+  var cons = Array.isArray(raw.weaknesses) ? raw.weaknesses.slice(0, 2) : [];
+  sbPatch('players', {id: st.userId}, {
+    face_overall: s.overall, face_symmetry: s.symmetry, face_jawline: s.jawline,
+    face_eyes: s.eyes, face_skin: s.skin,
+    face_vibe: raw.vibe || null,
+    face_strengths: pros.join('|'),
+    face_weaknesses: cons.join('|'),
+    elo: newElo
+  });
+  // Save face score to account
+  if (st.accountId) {
+    sbPatch('accounts', {id: st.accountId}, {
+      face_overall: s.overall, face_symmetry: s.symmetry,
+      face_jawline: s.jawline, face_eyes: s.eyes, face_skin: s.skin,
+      elo: newElo
+    });
+    saveSession();
+  }
+  document.getElementById('sr-score').textContent = s.overall;
+  if (raw.vibe) { var v = document.getElementById('sr-vibe'); v.textContent = '"' + raw.vibe + '"'; v.style.display = 'block'; }
+  var featsHtml = ['symmetry','jawline','eyes','skin'].map(function(k) {
+    return '<div class="feat-row"><span class="feat-nm">' + k + '</span><div class="feat-bar"><div class="feat-fill" style="width:' + s[k] + '%;background:' + FC[k] + '"></div></div><span class="feat-val" style="color:' + FC[k] + '">' + s[k] + '</span></div>';
+  }).join('');
+  document.getElementById('sr-feats').innerHTML = featsHtml;
+  var prosHtml = pros.map(function(p) { return '<li>' + esc(p) + '</li>'; }).join('') || '<li>\u2014</li>';
+  var consHtml = cons.map(function(c) { return '<li>' + esc(c) + '</li>'; }).join('') || '<li>\u2014</li>';
+  document.getElementById('sr-pc').innerHTML = '<div class="pc-box"><h4 class="pros">strengths</h4><ul>' + prosHtml + '</ul></div><div class="pc-box"><h4 class="cons">weaknesses</h4><ul>' + consHtml + '</ul></div>';
+  document.getElementById('scan-res').style.display = 'block';
+}
+
+function resetScan() {
+  document.getElementById('scan-res').style.display = 'none';
+  document.getElementById('lob-enter').style.display = 'none';
+  document.getElementById('rescan-btn').style.display = 'none';
+  var b = document.getElementById('scan-btn'); b.style.display = 'inline-block'; b.disabled = false; b.textContent = 'scan my face';
+  st.myScore = null;
+}
+function skipScan() { stopCam(); enterApp(); }
+
+// ── APP ──
+function enterApp() {
+  stopCam();
+  document.getElementById('app-code').textContent = st.roomCode || '\u2014';
+  document.getElementById('app-elo').textContent = 'ELO ' + (st.elo || 1200);
+  document.getElementById('app-user').textContent = st.user || '';
+  document.getElementById('rm-code').textContent = st.roomCode || '\u2014';
+  document.getElementById('lb-sub').textContent = (st.roomName || 'room') + ' \xB7 ranked by elo';
+  document.getElementById('admin-sect').style.display = st.role === 'teacher' ? 'block' : 'none';
+  show('s-app');
+  loadMatchup(); loadGallery(); renderLB(); renderMembers(); loadChat(); startPolling();
+}
+
+function leaveRoom() {
+  if (st.userId) sbPatch('players', {id: st.userId}, {online: false});
+  // Sync ELO back to account
+  if (st.accountId && st.elo) {
+    sbPatch('accounts', {id: st.accountId}, {elo: st.elo});
+    saveSession();
+  }
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  if (lbPollTimer) clearInterval(lbPollTimer);
+  chatPollTimer = null; lbPollTimer = null; lastChatIds = [];
+  st.userId = null; st.roomId = null; st.roomCode = null; st.roomName = null;
+  st.matchup = null; st.voted = false; st.stream = null;
+  show('s-landing'); loadStats();
+}
+
+function startPolling() {
+  chatPollTimer = setInterval(function() { if (st.roomId) pollChat(); }, 3000);
+  lbPollTimer = setInterval(function() { if (st.roomId) renderLB(); }, 8000);
+}
+
+// ── MATCHUP ──
+function loadMatchup() {
+  document.getElementById('a-loading').style.display = 'block';
+  document.getElementById('a-waiting').style.display = 'none';
+  document.getElementById('a-matchup').style.display = 'none';
+  document.getElementById('res-flash').style.display = 'none';
+  document.getElementById('vote-btns').style.display = 'flex';
+  st.voted = false;
+  sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
+    var pool = (res.data || []).filter(function(p) { return p.id !== st.userId; });
+    if (!pool.length) {
+      document.getElementById('a-loading').style.display = 'none';
+      document.getElementById('a-waiting').style.display = 'block';
+      return;
+    }
+    pool.sort(function() { return Math.random() - 0.5; });
+    var L = pool[0], R = pool.length > 1 ? pool[1] : pool[0];
+    sbPost('matchups', {room_id: st.roomId, left_id: L.id, right_id: R.id, votes_left: 0, votes_right: 0, active: true}).then(function(mres) {
+      var mup = Array.isArray(mres.data) ? mres.data[0] : mres.data;
+      st.matchup = {id: mup && mup.id, L: L, R: R};
+      renderFighter('l', L); renderFighter('r', R);
+      document.getElementById('vc-cnt').textContent = '0 votes';
+      document.getElementById('fl').className = 'fighter';
+      document.getElementById('fr').className = 'fighter';
+      document.getElementById('a-loading').style.display = 'none';
+      document.getElementById('a-matchup').style.display = 'flex';
+    });
+  });
+}
+
+function renderFighter(side, p) {
+  document.getElementById('f' + side + '-nm').textContent = esc(p.name);
+  document.getElementById('f' + side + '-el').textContent = 'ELO ' + p.elo;
+  document.getElementById('f' + side + '-img').textContent = '\uD83D\uDC64';
+  var sc = p.face_overall;
+  var pillHtml = sc != null
+    ? '<div class="spill ' + (sc >= 80 ? 'sp-hi' : sc >= 65 ? 'sp-mid' : 'sp-lo') + '">' + sc + '/100</div>'
+    : '<div class="spill sp-lo">no scan</div>';
+  document.getElementById('f' + side + '-pl').innerHTML = pillHtml;
+  var featsHtml = '';
+  if (sc != null) {
+    featsHtml = ['symmetry','jawline','eyes','skin'].map(function(k) {
+      var val = p['face_' + k] || 0;
+      return '<div class="mf-row"><span class="mf-lbl">' + k + '</span><div class="mf-bar"><div class="mf-fill" style="width:' + val + '%;background:' + FC[k] + '"></div></div><span style="font-size:10px;color:var(--text3)">' + val + '</span></div>';
+    }).join('');
+  }
+  document.getElementById('f' + side + '-ft').innerHTML = featsHtml;
+}
+
+function castVote(side) {
+  if (st.voted || !st.matchup) return;
+  st.voted = true;
+  var m = st.matchup;
+  var winner = side === 'left' ? m.L : m.R;
+  var loser = side === 'left' ? m.R : m.L;
+  var voteCol = side === 'left' ? 'votes_left' : 'votes_right';
+  if (m.id) {
+    var upd = {winner_id: winner.id, active: false};
+    upd[voteCol] = 1;
+    sbPatch('matchups', {id: m.id}, upd);
+  }
+  var K = 32, wE = winner.elo || 1200, lE = loser.elo || 1200;
+  var exp = 1 / (1 + Math.pow(10, (lE - wE) / 400));
+  var delta = Math.round(K * (1 - exp));
+  var newWElo = wE + delta, newLElo = Math.max(800, lE - delta);
+  sbPatch('players', {id: winner.id}, {elo: newWElo, wins: (winner.wins || 0) + 1});
+  sbPatch('players', {id: loser.id}, {elo: newLElo, losses: (loser.losses || 0) + 1});
+  // Sync ELO back to accounts if they have one
+  if (winner.account_id) sbPatch('accounts', {id: winner.account_id}, {elo: newWElo, wins: (winner.wins || 0) + 1});
+  if (loser.account_id) sbPatch('accounts', {id: loser.account_id}, {elo: newLElo, losses: (loser.losses || 0) + 1});
+  // Update local ELO if we voted on ourselves
+  if (winner.id === st.userId) { st.elo = newWElo; saveSession(); }
+  if (loser.id === st.userId) { st.elo = newLElo; saveSession(); }
+  document.getElementById('fl').className = 'fighter ' + (side === 'left' ? 'fw' : 'fl');
+  document.getElementById('fr').className = 'fighter ' + (side === 'right' ? 'fw' : 'fl');
+  document.getElementById('vote-btns').style.display = 'none';
+  document.getElementById('rf-w').textContent = esc(winner.name) + ' is mogging \uD83D\uDD25';
+  document.getElementById('rf-s').textContent = '+' + delta + ' ELO \xB7 next matchup loading...';
+  document.getElementById('res-flash').style.display = 'block';
+  renderLB();
+  setTimeout(loadMatchup, 2200);
+}
+
+// ── GALLERY ──
+function loadGallery() {
+  sbGet('matchups', {room_id: st.roomId}, 25, 'created_at.desc').then(function(res) {
+    var ms = res.data || [];
+    if (!ms.length) { document.getElementById('vote-cards').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">no matchups yet</div>'; return; }
+    sbGet('players', {room_id: st.roomId}, 100).then(function(pres) {
+      var pMap = {};
+      (pres.data || []).forEach(function(p) { pMap[p.id] = p; });
+      var html = ms.map(function(m) {
+        var L = pMap[m.left_id] || {name: '?', elo: 1200, face_overall: null};
+        var R = pMap[m.right_id] || {name: '?', elo: 1200, face_overall: null};
+        var tot = (m.votes_left || 0) + (m.votes_right || 0);
+        var wl = m.winner_id === m.left_id ? ' vc-w' : '';
+        var wr2 = m.winner_id === m.right_id ? ' vc-w' : '';
+        var wonName = m.winner_id ? esc(m.winner_id === m.left_id ? L.name : R.name) + ' mogged' : '';
+        var lSub = 'ELO ' + L.elo + (L.face_overall != null ? ' \xB7 ' + L.face_overall + '/100' : '');
+        var rSub = 'ELO ' + R.elo + (R.face_overall != null ? ' \xB7 ' + R.face_overall + '/100' : '');
+        var lid = m.left_id, rid = m.right_id, mid = m.id;
+        var lnm = esc(L.name), rnm = esc(R.name);
+        return '<div class="vc"><div class="vc-row"><div class="vc-side' + wl + '" onclick="galVote(\'' + mid + '\',\'left\',\'' + lid + '\',\'' + rid + '\',\'' + lnm + '\')"><div class="vc-thumb">\uD83D\uDC64</div><div class="vc-info">' + lnm + '<div class="vc-sub">' + lSub + '</div></div></div><div class="vc-vs">VS</div><div class="vc-side' + wr2 + '" onclick="galVote(\'' + mid + '\',\'right\',\'' + lid + '\',\'' + rid + '\',\'' + rnm + '\')"><div class="vc-thumb">\uD83D\uDC64</div><div class="vc-info">' + rnm + '<div class="vc-sub">' + rSub + '</div></div></div></div><div class="vc-foot"><span class="vc-vt">' + tot + ' vote' + (tot !== 1 ? 's' : '') + '</span>' + (wonName ? '<span class="vc-won">' + wonName + '</span>' : '<span style="font-size:11px;color:var(--text3)">tap to vote</span>') + '</div></div>';
+      }).join('');
+      document.getElementById('vote-cards').innerHTML = html;
+    });
+  });
+}
+
+function galVote(mid, side, lid, rid, wname) {
+  var winnerId = side === 'left' ? lid : rid;
+  var col = side === 'left' ? 'votes_left' : 'votes_right';
+  sbGet('matchups', {id: mid}, 1).then(function(res) {
+    var row = (res.data || [])[0] || {};
+    var upd = {winner_id: winnerId};
+    upd[col] = (row[col] || 0) + 1;
+    sbPatch('matchups', {id: mid}, upd);
+    toast(wname + ' voted as top mog!');
+    loadGallery();
+  });
+}
+
+// ── LEADERBOARD ──
+function renderLB() {
+  if (!st.roomId) return;
+  sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
+    var ps = (res.data || []).sort(function(a, b) { return b.elo - a.elo; });
+    var html = ps.map(function(p, i) {
+      var wr = p.wins + p.losses > 0 ? Math.round(p.wins / (p.wins + p.losses) * 100) : 50;
+      var rk = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      var me = p.id === st.userId;
+      if (me) { st.elo = p.elo; document.getElementById('app-elo').textContent = 'ELO ' + p.elo; saveSession(); }
+      var nm = esc(p.name) + (me ? ' <span style="font-size:10px;color:var(--text3)">(you)</span>' : '');
+      var mt = p.wins + 'W \xB7 ' + p.losses + 'L' + (p.face_overall != null ? ' \xB7 face ' + p.face_overall + '/100' : '');
+      return '<div class="lb-row' + (me ? ' me' : '') + '"><div class="lb-rk ' + rk + '">#' + (i+1) + '</div><div class="lb-av">\uD83D\uDC64</div><div class="lb-inf"><div class="lb-nm">' + nm + '</div><div class="lb-mt">' + mt + '</div></div>' + (i === 0 ? '<div class="crown">top mog</div>' : '') + '<div class="lb-rt"><div class="lb-elo">' + p.elo + '</div><div class="lb-wr">' + wr + '% WR</div></div></div>';
+    }).join('');
+    document.getElementById('lb-list').innerHTML = html || '<div style="color:var(--text3);font-size:13px">no players yet</div>';
+  });
+}
+
+// ── MEMBERS ──
+function renderMembers() {
+  if (!st.roomId) return;
+  sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
+    var html = (res.data || []).map(function(p) {
+      return '<div class="mem-row"><div class="dot' + (p.online ? '' : ' off') + '"></div>' + esc(p.name) + (p.id === st.userId ? ' <span style="color:var(--text3);font-size:10px">(you)</span>' : '') + '<span class="mem-role">' + p.role + '</span></div>';
+    }).join('');
+    document.getElementById('mem-list').innerHTML = html;
+  });
+}
+
+// ── CHAT ──
+function loadChat() {
+  sbGet('messages', {room_id: st.roomId}, 60, 'created_at.asc').then(function(res) {
+    var msgs = res.data || [];
+    var el = document.getElementById('chat-msgs');
+    el.innerHTML = '';
+    msgs.forEach(appendMsg);
+    lastChatIds = msgs.map(function(m) { return m.id; });
+  });
+}
+function pollChat() {
+  sbGet('messages', {room_id: st.roomId}, 60, 'created_at.asc').then(function(res) {
+    var msgs = res.data || [];
+    var newMsgs = msgs.filter(function(m) { return lastChatIds.indexOf(m.id) === -1; });
+    if (newMsgs.length) { newMsgs.forEach(appendMsg); lastChatIds = msgs.map(function(m) { return m.id; }); }
+  });
+}
+function sendChat() {
+  var inp = document.getElementById('chat-in');
+  var txt = inp.value.trim(); if (!txt) return;
+  inp.value = '';
+  sbPost('messages', {room_id: st.roomId, player_id: st.userId, player_name: st.user, text: txt});
+  var c = document.getElementById('chat-msgs');
+  var d = document.createElement('div'); d.className = 'msg mine'; d.textContent = txt;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function appendMsg(m) {
+  var c = document.getElementById('chat-msgs');
+  var me = m.player_id === st.userId;
+  var d = document.createElement('div'); d.className = 'msg ' + (me ? 'mine' : 'theirs');
+  d.innerHTML = (me ? '' : '<div class="msg-nm">' + esc(m.player_name) + '</div>') + esc(m.text);
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function chatKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
+
+// ── TABS ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-pane').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('tab-' + tab).classList.add('active'); btn.classList.add('active');
+  if (tab === 'gallery') loadGallery();
+  if (tab === 'lb') renderLB();
+  if (tab === 'room') { renderMembers(); loadRoomHistory(); }
+}
+
+// ── REPORT ──
+function openReport() { document.getElementById('rpt-modal').classList.add('open'); }
+function closeReport() { document.getElementById('rpt-modal').classList.remove('open'); }
+function submitReport() {
+  var sel = document.querySelector('input[name="rpt"]:checked');
+  if (!sel) { toast('Select a reason.'); return; }
+  var m = st.matchup;
+  sbPost('reports', {room_id: st.roomId, reporter_id: st.userId, reported_id: m && m.R ? m.R.id : null, reason: sel.value});
+  closeReport(); toast('Report submitted. Admin notified.');
+}
+function viewReports() {
+  sbGet('reports', {room_id: st.roomId}, 30).then(function(res) {
+    var rs = res.data || [];
+    if (!rs.length) { toast('No reports yet.'); return; }
+    var lines = rs.map(function(r) { return '[' + new Date(r.created_at).toLocaleString() + '] ' + r.reason; }).join('\n');
+    alert('Reports (' + rs.length + '):\n\n' + lines);
+  });
+}
+
+// ── ADMIN ──
+function resetElo() {
+  if (!confirm('Reset all ELO to 1200?')) return;
+  sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
+    var ps = res.data || [];
+    ps.forEach(function(p) { sbPatch('players', {id: p.id}, {elo: 1200, wins: 0, losses: 0}); });
+    setTimeout(renderLB, 500); toast('Scores reset.');
+  });
+}
+function closeRoom() {
+  if (!confirm('Close this room for everyone?')) return;
+  sbPatch('rooms', {id: st.roomId}, {active: false});
+  leaveRoom();
+}
+
+// ── UTILS ──
+function cl(v) { return Math.max(0, Math.min(100, Math.round(v || 0))); }
+function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function toast(m) { var t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2800); }
+function copyCode() { navigator.clipboard.writeText(st.roomCode || '').then(function() { var b = document.querySelector('.copy-btn'); b.textContent = 'copied!'; setTimeout(function() { b.textContent = 'copy'; }, 1500); }); }
+function copySQL() { navigator.clipboard.writeText(document.getElementById('sql-block').textContent).then(function() { toast('SQL copied!'); }); }
+
+</script>
+</body>
+</html>
