@@ -540,7 +540,7 @@ create policy if not exists "open" on room_history for all using (true) with che
 </div>
 <div id="toast"></div>
 <script>
-var SB_URL = '', SB_KEY = '';
+var SB_URL = 'https://kajpyrzljhabxmvpvphg.supabase.co', SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthanB5cnpsamhhYnhtdnB2cGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTUyODgsImV4cCI6MjA5NDQ5MTI4OH0.2fgXvxL3Wfbt4UaRVSktDw5fwvhuNO6BsVH4sVgXMBw';
 var FC = {symmetry:'#378ADD',jawline:'#1D9E75',eyes:'#EF9F27',skin:'#D4537E'};
 var st = {
   userId:null, accountId:null, user:null, role:'student',
@@ -603,9 +603,8 @@ function authReq(path, body) {
 
 // ── BOOT ──
 window.addEventListener('load', function() {
-  var url = localStorage.getItem('sb_url'), key = localStorage.getItem('sb_key');
+  var url = SB_URL, key = SB_KEY;
   if (url && key) {
-    SB_URL = url; SB_KEY = key;
     var saved = localStorage.getItem('mg_session');
     if (saved) {
       try {
