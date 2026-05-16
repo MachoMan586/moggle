@@ -8,15 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;
-  --border:#2a2a2a;--border2:#333;
-  --text:#f0f0f0;--text2:#999;--text3:#555;
-  --red:#E24B4A;--red2:#c93d3c;--red-bg:#1a0808;
-  --green:#1D9E75;--green-bg:#041a12;
-  --amber:#EF9F27;--amber-bg:#1a1100;
-  --radius:10px;--radius-lg:16px;
-}
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--text2:#999;--text3:#555;--red:#E24B4A;--red2:#c93d3c;--red-bg:#1a0808;--green:#1D9E75;--green-bg:#041a12;--amber:#EF9F27;--amber-bg:#1a1100;--radius:10px;--radius-lg:16px;}
 html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif}
 button{font-family:'Syne',sans-serif;cursor:pointer}
 input,textarea{font-family:'DM Mono',monospace}
@@ -32,21 +24,7 @@ input,textarea{font-family:'DM Mono',monospace}
 .field input:focus{border-color:var(--border2)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* SETUP */
-#s-setup{align-items:center;justify-content:center;padding:2rem}
-.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:560px}
-.setup-logo{font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}.setup-logo span{color:var(--red)}
-.setup-card>p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem}
-.step-row{display:flex;gap:12px;margin-bottom:1rem;align-items:flex-start}
-.step-n{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.step-b{font-size:13px;color:var(--text2);line-height:1.6}
-.step-b code{font-family:'DM Mono',monospace;background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--amber);font-size:12px}
-.step-b a{color:var(--amber)}
-.sql-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);white-space:pre;overflow-x:auto;line-height:1.7;margin:8px 0}
-.cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
-.setup-err{font-size:12px;color:var(--red);margin-top:6px;display:none;font-family:'DM Mono',monospace}
-/* LANDING */
-#s-landing{align-items:center;justify-content:center;padding:2rem;text-align:center;gap:1.75rem}
+#s-landing{align-items:center;justify-content:center;padding:2rem;text-align:center;gap:1.75rem;position:relative}
 .land-logo{font-size:72px;font-weight:800;letter-spacing:-4px;line-height:1}.land-logo span{color:var(--red)}
 .land-sub{font-size:15px;color:var(--text2);max-width:340px;line-height:1.6}
 .land-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
@@ -54,7 +32,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .stat-n{font-size:28px;font-weight:800;text-align:center}.stat-l{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;text-align:center}
 .land-nav{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:10px;font-size:13px}
 .land-nav span{color:var(--text2);font-family:'DM Mono',monospace}
-/* ACCOUNT */
 #s-account{align-items:center;justify-content:center;padding:2rem}
 .acc-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:380px}
 .acc-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
@@ -63,8 +40,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .acc-tab{flex:1;padding:9px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text2);transition:all .15s;cursor:pointer}
 .acc-tab.active{background:var(--bg3);color:var(--text)}
 .acc-err{font-size:13px;color:var(--red);margin-top:8px;display:none}
-.acc-ok{font-size:13px;color:var(--green);margin-top:8px;display:none}
-/* AUTH */
 #s-auth{align-items:center;justify-content:center;padding:2rem}
 .auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:400px}
 .auth-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
@@ -77,7 +52,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .role-pill.active{border-color:var(--red);color:var(--red);background:var(--red-bg)}
 .code-disp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;font-family:'DM Mono',monospace;font-size:22px;font-weight:500;letter-spacing:.15em;color:var(--amber);margin-bottom:1rem}
 .auth-err{font-size:13px;color:var(--red);margin-top:8px;display:none}
-/* LOBBY */
 #s-lobby{align-items:center;justify-content:center;padding:2rem;gap:1.4rem}
 .lob-hdr{text-align:center}.lob-hdr h2{font-size:24px;font-weight:800}.lob-hdr p{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.6}
 .cam-wrap{position:relative;width:290px;height:218px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
@@ -108,7 +82,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .scan-err-msg{font-size:12px;color:var(--red);font-family:'DM Mono',monospace;display:none;text-align:center;max-width:290px}
 .priv-note{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center;max-width:290px;line-height:1.6}
 .lob-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-/* APP */
 #s-app{flex-direction:column}
 .topbar{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
 .tbar-logo{font-size:20px;font-weight:800;letter-spacing:-1px}.tbar-logo span{color:var(--red)}
@@ -120,14 +93,13 @@ input,textarea{font-family:'DM Mono',monospace}
 .nav-tab{padding:7px 14px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text2);border-radius:7px 7px 0 0;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;cursor:pointer}
 .nav-tab:hover{color:var(--text)}.nav-tab.active{color:var(--text);border-bottom-color:var(--red)}
 .tab-pane{display:none;flex:1;overflow:auto}.tab-pane.active{display:flex;flex-direction:column}
-/* ARENA */
 .arena-layout{display:flex;flex:1;min-height:0}
 .arena-main{flex:1;padding:1.25rem 16px;display:flex;flex-direction:column;align-items:center;gap:1.2rem;overflow-y:auto}
 .arena-hdr{text-align:center}.arena-hdr h2{font-size:20px;font-weight:800}.arena-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
 .match-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:start;width:100%;max-width:660px}
 .fighter{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:all .2s;cursor:pointer}
 .fighter:hover{border-color:var(--border2)}.fighter.fw{border-color:var(--green);background:var(--green-bg);cursor:default}.fighter.fl{opacity:.45;cursor:default}
-.f-img{aspect-ratio:3/4;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--text3);max-height:195px;overflow:hidden}
+.f-img{aspect-ratio:3/4;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--text3);max-height:195px;overflow:hidden;position:relative}
 .f-body{padding:10px 12px}
 .f-name{font-size:13px;font-weight:700}.f-elo{font-size:10px;color:var(--amber);font-family:'DM Mono',monospace;margin-top:2px}
 .spill{display:inline-block;font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:99px;margin-top:5px}
@@ -152,7 +124,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .wait-box{text-align:center;padding:2.5rem 1rem}
 .wait-ico{font-size:34px;margin-bottom:10px}
 .wait-box p{font-size:14px;color:var(--text2);margin-bottom:4px}.wait-box small{font-size:12px;color:var(--text3)}
-/* CHAT */
 .chat-sb{width:236px;border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
 .chat-top{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2)}
 .chat-top span{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;flex:1}
@@ -166,7 +137,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .chat-form textarea{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 8px;color:var(--text);font-size:12px;resize:none;outline:none;height:33px;line-height:1.4}
 .send-btn{padding:0 11px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;transition:all .15s;cursor:pointer}
 .send-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
-/* GALLERY */
 .gal-wrap{padding:1.25rem 16px;flex:1;overflow-y:auto}
 .gal-hdr{text-align:center;margin-bottom:1.2rem}.gal-hdr h2{font-size:20px;font-weight:800}.gal-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
 .vote-cards{display:flex;flex-direction:column;gap:12px;max-width:660px;margin:0 auto}
@@ -180,7 +150,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .vc-foot{padding:7px 13px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .vc-vt{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;flex:1}
 .vc-won{font-size:11px;color:var(--green);font-family:'DM Mono',monospace}
-/* LEADERBOARD */
 .lb-wrap{padding:1.25rem 16px}
 .lb-hdr{margin-bottom:1.2rem}.lb-hdr h2{font-size:20px;font-weight:800}.lb-hdr p{font-size:12px;color:var(--text2);margin-top:3px}
 .lb-list{display:flex;flex-direction:column;gap:5px;max-width:660px}
@@ -193,7 +162,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .lb-mt{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
 .lb-rt{text-align:right}.lb-elo{font-size:14px;font-weight:700;color:var(--amber)}.lb-wr{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
 .crown{font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid #3a2800;border-radius:99px;padding:2px 8px;font-family:'DM Mono',monospace}
-/* ROOM */
 .room-wrap{padding:1.25rem 16px;display:flex;flex-direction:column;gap:1rem;max-width:540px}
 .sect{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem}
 .sect h3{font-size:14px;font-weight:700;margin-bottom:4px}.sect>p{font-size:12px;color:var(--text2);margin-bottom:.9rem;line-height:1.6}
@@ -207,7 +175,6 @@ input,textarea{font-family:'DM Mono',monospace}
 .hist-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .hist-info{flex:1}.hist-name{font-size:13px;font-weight:500}
 .hist-code{font-size:11px;font-family:'DM Mono',monospace;color:var(--amber);margin-top:2px}
-/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;padding:1rem}
 .modal-bg.open{display:flex}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:350px}
@@ -217,71 +184,22 @@ input,textarea{font-family:'DM Mono',monospace}
 .rpt-opt:hover{border-color:var(--red);color:var(--red)}
 .rpt-opt input{accent-color:var(--red)}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
-/* TOAST */
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 16px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div id="s-setup" class="screen active">
-<div class="setup-card">
-  <div class="setup-logo">mog<span>.</span>gg <span style="font-size:13px;font-weight:400;color:var(--text3);letter-spacing:0">setup</span></div>
-  <p>Connect Supabase once. Run this new SQL first to add the accounts tables:</p>
-  <div class="sql-box" id="sql-block">-- accounts table (run this if you haven't already)
-create table if not exists accounts (
-  id uuid primary key default gen_random_uuid(),
-  auth_id uuid unique,
-  username text unique not null,
-  email text unique not null,
-  elo int default 1200,
-  wins int default 0,
-  losses int default 0,
-  face_overall int,
-  face_symmetry int,
-  face_jawline int,
-  face_eyes int,
-  face_skin int,
-  created_at timestamptz default now()
-);
-create table if not exists room_history (
-  id uuid primary key default gen_random_uuid(),
-  account_id uuid references accounts(id) on delete cascade,
-  room_id uuid,
-  room_code text,
-  room_name text,
-  created_at timestamptz default now()
-);
--- add account_id to players if not exists
-alter table players add column if not exists account_id uuid references accounts(id);
-alter table rooms add column if not exists account_id uuid references accounts(id);
-alter table accounts enable row level security;
-alter table room_history enable row level security;
-create policy if not exists "open" on accounts for all using (true) with check (true);
-create policy if not exists "open" on room_history for all using (true) with check (true);</div>
-  <button class="btn" style="font-size:12px;padding:6px 13px;margin-bottom:1.25rem" onclick="copySQL()">copy SQL</button>
-  <div class="step-row"><div class="step-n">2</div><div class="step-b">Paste your Supabase <code>API URL</code> and <code>anon key</code> from <code>Settings &rarr; API</code>:</div></div>
-  <div class="cfg-row">
-    <div class="field"><label>API URL</label><input id="cfg-url" placeholder="https://xxx.supabase.co" /></div>
-    <div class="field"><label>Anon Key</label><input id="cfg-key" placeholder="eyJh..." type="password" /></div>
-  </div>
-  <div class="setup-err" id="setup-err"></div>
-  <button class="btn btn-primary" style="width:100%" id="setup-btn" onclick="saveSetup()">connect &amp; continue &rarr;</button>
-</div>
-</div>
-
 <!-- LANDING -->
-<div id="s-landing" class="screen" style="position:relative">
+<div id="s-landing" class="screen active">
   <div class="land-nav">
     <span id="nav-user"></span>
     <button class="btn" id="nav-login" style="padding:6px 14px;font-size:12px" onclick="showAccAuth('login')">log in</button>
-    <button class="btn btn-primary" id="nav-signup" style="padding:6px 14px;font-size:12px;display:none" onclick="showAccAuth('signup')">sign up</button>
+    <button class="btn btn-primary" id="nav-signup" style="padding:6px 14px;font-size:12px" onclick="showAccAuth('signup')">sign up</button>
     <button class="btn" id="nav-logout" style="padding:6px 14px;font-size:12px;display:none" onclick="logOut()">log out</button>
-    <button class="btn" style="padding:6px 10px;font-size:12px;color:var(--text3)" onclick="show('s-setup')">&#9881;</button>
   </div>
   <div class="land-logo">mog<span>.</span>gg</div>
-  <p class="land-sub">your school's face-rating arena. scan, rank, find out who's mogging who.</p>
+  <p class="land-sub">your school's live face-rating arena. scan, rank, find out who's mogging who.</p>
   <div class="land-btns">
     <button class="btn btn-primary" onclick="showAuth('join')">join a room</button>
     <button class="btn" onclick="showAuth('create')">create a room</button>
@@ -322,7 +240,7 @@ create policy if not exists "open" on room_history for all using (true) with che
 </div>
 </div>
 
-<!-- AUTH (join/create room) -->
+<!-- AUTH -->
 <div id="s-auth" class="screen">
 <div class="auth-box">
   <div class="auth-tabs">
@@ -389,12 +307,12 @@ create policy if not exists "open" on room_history for all using (true) with che
     </div>
   </div>
   <div class="ak-box">
-    <div class="ak-lbl">anthropic api key (for real AI scan)</div>
+    <div class="ak-lbl">anthropic api key (for lobby scan)</div>
     <input id="ak" type="password" placeholder="sk-ant-api03-..." />
-    <div class="ak-note">stays in this tab only. sent only to api.anthropic.com. never stored.</div>
+    <div class="ak-note">stays in this tab only. sent only to api.anthropic.com.</div>
   </div>
   <div class="scan-err-msg" id="scan-err"></div>
-  <p class="priv-note">image captured once, analyzed by claude vision, immediately deleted. nothing stored beyond scores.</p>
+  <p class="priv-note">image captured once, analyzed by claude vision, immediately deleted.</p>
   <div class="lob-btns">
     <button class="btn" onclick="skipScan()">skip, enter without scan</button>
     <button class="btn btn-primary" id="lob-enter" style="display:none" onclick="enterApp()">enter arena &rarr;</button>
@@ -418,26 +336,36 @@ create policy if not exists "open" on room_history for all using (true) with che
     <button class="nav-tab" onclick="switchTab('lb',this)">leaderboard</button>
     <button class="nav-tab" onclick="switchTab('room',this)">room</button>
   </div>
-  <!-- ARENA -->
+<!-- ARENA -->
   <div id="tab-arena" class="tab-pane active">
     <div class="arena-layout">
       <div class="arena-main">
-        <div class="arena-hdr"><h2>who's mogging?</h2><p>vote for the better face. elo updates live.</p></div>
-        <div id="a-loading" style="color:var(--text3);font-size:13px;padding:2rem 0"><div class="spinner"></div>loading matchup...</div>
-        <div id="a-waiting" class="wait-box" style="display:none">
-          <div class="wait-ico">&#9203;</div>
-          <p>waiting for players</p>
-          <small id="wait-sub">need at least 1 other player in the room</small>
-          <div style="margin-top:1rem"><button class="btn btn-primary" onclick="loadMatchup()">try again</button></div>
+        <div class="arena-hdr"><h2>live 1v1</h2><p>camera on &middot; AI rates both faces &middot; room votes on who's mogging</p></div>
+
+        <div id="a-waiting" class="wait-box">
+          <div class="wait-ico">&#128247;</div>
+          <p id="wait-sub">looking for an opponent...</p>
+          <small>both players need to be in the same room and click ready</small>
+          <div style="margin-top:1rem;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" id="ready-btn" onclick="goReady()">i'm ready to mog</button>
+            <button class="btn" onclick="resetArena()">refresh</button>
+          </div>
         </div>
-        <div id="a-matchup" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
+
+        <div id="a-scanning" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
+          <div style="font-size:13px;color:var(--text2);text-align:center">camera on &middot; AI is rating your face...</div>
           <div class="match-grid">
-            <div class="fighter" id="fl" onclick="castVote('left')">
-              <div class="f-img" id="fl-img">&#128100;</div>
+            <div class="fighter" id="fl">
+              <div class="f-img" id="fl-cam-wrap" style="position:relative;overflow:hidden">
+                <video id="my-cam" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);position:absolute;inset:0"></video>
+                <div id="my-scan-ov" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none">
+                  <div class="scan-frm"></div><div class="scan-ln"></div>
+                </div>
+              </div>
               <div class="f-body">
-                <div class="f-name" id="fl-nm">-</div>
+                <div class="f-name" id="fl-nm">you</div>
                 <div class="f-elo" id="fl-el">ELO -</div>
-                <div id="fl-pl"></div>
+                <div id="fl-pl"><div class="spill sp-lo"><div class="spinner"></div>analyzing...</div></div>
                 <div class="mf-rows" id="fl-ft"></div>
               </div>
             </div>
@@ -445,27 +373,63 @@ create policy if not exists "open" on room_history for all using (true) with che
               <div class="vs-txt">VS</div>
               <div class="vc-cnt" id="vc-cnt">0 votes</div>
             </div>
-            <div class="fighter" id="fr" onclick="castVote('right')">
+            <div class="fighter" id="fr">
               <div class="f-img" id="fr-img">&#128100;</div>
               <div class="f-body">
-                <div class="f-name" id="fr-nm">-</div>
+                <div class="f-name" id="fr-nm">opponent</div>
                 <div class="f-elo" id="fr-el">ELO -</div>
-                <div id="fr-pl"></div>
+                <div id="fr-pl"><div class="spill sp-lo">waiting for scan...</div></div>
                 <div class="mf-rows" id="fr-ft"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">image deleted immediately after AI analysis</div>
+        </div>
+
+        <div id="a-matchup" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
+          <div style="font-size:13px;color:var(--green);font-weight:600;text-align:center">both faces rated &middot; room is voting now</div>
+          <div class="match-grid">
+            <div class="fighter" id="fl2" onclick="castVote('left')">
+              <div class="f-img" id="fl2-img">&#128100;</div>
+              <div class="f-body">
+                <div class="f-name" id="fl2-nm">-</div>
+                <div class="f-elo" id="fl2-el">ELO -</div>
+                <div id="fl2-pl"></div>
+                <div class="mf-rows" id="fl2-ft"></div>
+              </div>
+            </div>
+            <div class="vs-col">
+              <div class="vs-txt">VS</div>
+              <div class="vc-cnt" id="vc-cnt2">0 votes</div>
+            </div>
+            <div class="fighter" id="fr2" onclick="castVote('right')">
+              <div class="f-img" id="fr2-img">&#128100;</div>
+              <div class="f-body">
+                <div class="f-name" id="fr2-nm">-</div>
+                <div class="f-elo" id="fr2-el">ELO -</div>
+                <div id="fr2-pl"></div>
+                <div class="mf-rows" id="fr2-ft"></div>
               </div>
             </div>
           </div>
           <div id="res-flash" class="result-flash">
             <div class="rf-w" id="rf-w">-</div>
-            <div class="rf-s" id="rf-s">next matchup in 2s...</div>
+            <div class="rf-s" id="rf-s">click new match to go again</div>
           </div>
           <div class="vote-btns" id="vote-btns">
             <button class="vote-btn" onclick="castVote('left')">&larr; left mogging</button>
-            <button class="skip-btn" onclick="loadMatchup()">skip</button>
+            <button class="skip-btn" onclick="resetArena()">new match</button>
             <button class="vote-btn" onclick="castVote('right')">right mogging &rarr;</button>
           </div>
         </div>
+
+        <div class="ak-box" style="width:100%;max-width:400px;margin-top:.5rem">
+          <div class="ak-lbl">anthropic api key (required for live AI rating)</div>
+          <input id="arena-ak" type="password" placeholder="sk-ant-api03-..." />
+          <div class="ak-note">used only for face analysis. never stored.</div>
+        </div>
       </div>
+
       <div class="chat-sb">
         <div class="chat-top">
           <span>live chat</span>
@@ -482,7 +446,7 @@ create policy if not exists "open" on room_history for all using (true) with che
   <!-- GALLERY -->
   <div id="tab-gallery" class="tab-pane">
     <div class="gal-wrap">
-      <div class="gal-hdr"><h2>vote gallery</h2><p>community voting on all matchups in this room.</p></div>
+      <div class="gal-hdr"><h2>vote gallery</h2><p>all matchups in this room. tap to vote.</p></div>
       <div class="vote-cards" id="vote-cards"><div style="color:var(--text3);font-size:13px"><div class="spinner"></div>loading...</div></div>
     </div>
   </div>
@@ -505,12 +469,11 @@ create policy if not exists "open" on room_history for all using (true) with che
       </div>
       <div class="sect"><h3>members</h3><div id="mem-list"><div style="color:var(--text3);font-size:12px">loading...</div></div></div>
       <div class="sect">
-        <h3>your room history</h3>
-        <p>rooms you've joined before. click to rejoin instantly.</p>
+        <h3>your room history</h3><p>rooms you've joined. click to rejoin.</p>
         <div id="history-list"><div style="color:var(--text3);font-size:12px">loading...</div></div>
       </div>
       <div class="sect danger" id="admin-sect" style="display:none">
-        <h3>admin controls</h3><p>manage the room and review reports.</p>
+        <h3>admin controls</h3><p>manage the room.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" onclick="viewReports()">view reports</button>
           <button class="btn" onclick="resetElo()">reset elo</button>
@@ -539,6 +502,7 @@ create policy if not exists "open" on room_history for all using (true) with che
   </div>
 </div>
 <div id="toast"></div>
+
 <script>
 var SB_URL = 'https://kajpyrzljhabxmvpvphg.supabase.co', SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthanB5cnpsamhhYnhtdnB2cGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTUyODgsImV4cCI6MjA5NDQ5MTI4OH0.2fgXvxL3Wfbt4UaRVSktDw5fwvhuNO6BsVH4sVgXMBw';
 var FC = {symmetry:'#378ADD',jawline:'#1D9E75',eyes:'#EF9F27',skin:'#D4537E'};
@@ -1033,88 +997,214 @@ function startPolling() {
   lbPollTimer = setInterval(function() { if (st.roomId) renderLB(); }, 8000);
 }
 
-// ── MATCHUP ──
-function loadMatchup() {
-  document.getElementById('a-loading').style.display = 'block';
-  document.getElementById('a-waiting').style.display = 'none';
+// -- MATCHUP / LIVE 1v1 --
+var arenaStream = null;
+var arenaMatchup = null;
+var arenaPollTimer = null;
+
+function resetArena() {
+  stopArenaStream();
+  arenaMatchup = null;
+  if (arenaPollTimer) { clearInterval(arenaPollTimer); arenaPollTimer = null; }
+  document.getElementById('a-waiting').style.display = 'block';
+  document.getElementById('a-scanning').style.display = 'none';
   document.getElementById('a-matchup').style.display = 'none';
   document.getElementById('res-flash').style.display = 'none';
   document.getElementById('vote-btns').style.display = 'flex';
+  var rb = document.getElementById('ready-btn');
+  rb.disabled = false; rb.textContent = "i'm ready to mog";
+  document.getElementById('wait-sub').textContent = 'looking for an opponent...';
+  document.getElementById('fl-pl').innerHTML = '<div class="spill sp-lo"><div class="spinner"></div>analyzing...</div>';
+  document.getElementById('fr-pl').innerHTML = '<div class="spill sp-lo">waiting for scan...</div>';
+  document.getElementById('fl-ft').innerHTML = '';
+  document.getElementById('fr-ft').innerHTML = '';
   st.voted = false;
-  sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
-    var pool = (res.data || []).filter(function(p) { return p.id !== st.userId; });
-    if (!pool.length) {
-      document.getElementById('a-loading').style.display = 'none';
-      document.getElementById('a-waiting').style.display = 'block';
-      return;
-    }
-    pool.sort(function() { return Math.random() - 0.5; });
-    var L = pool[0], R = pool.length > 1 ? pool[1] : pool[0];
-    sbPost('matchups', {room_id: st.roomId, left_id: L.id, right_id: R.id, votes_left: 0, votes_right: 0, active: true}).then(function(mres) {
-      var mup = Array.isArray(mres.data) ? mres.data[0] : mres.data;
-      st.matchup = {id: mup && mup.id, L: L, R: R};
-      renderFighter('l', L); renderFighter('r', R);
-      document.getElementById('vc-cnt').textContent = '0 votes';
-      document.getElementById('fl').className = 'fighter';
-      document.getElementById('fr').className = 'fighter';
-      document.getElementById('a-loading').style.display = 'none';
-      document.getElementById('a-matchup').style.display = 'flex';
+}
+
+function loadMatchup() { resetArena(); }
+
+function stopArenaStream() {
+  if (arenaStream) { arenaStream.getTracks().forEach(function(t){t.stop();}); arenaStream = null; }
+}
+
+function capArenaFrame() {
+  var v = document.getElementById('my-cam');
+  var canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 240;
+  var ctx = canvas.getContext('2d');
+  ctx.translate(320,0); ctx.scale(-1,1); ctx.drawImage(v,0,0,320,240);
+  var b64 = canvas.toDataURL('image/jpeg',0.82).split(',')[1];
+  ctx.clearRect(0,0,320,240); canvas.width=1; canvas.height=1;
+  return b64;
+}
+
+function buildPill(score) {
+  var cls = score>=80?'sp-hi':score>=65?'sp-mid':'sp-lo';
+  return '<div class="spill '+cls+'">'+score+'/100</div>';
+}
+function buildFeats(s) {
+  return ['symmetry','jawline','eyes','skin'].map(function(k){
+    return '<div class="mf-row"><span class="mf-lbl">'+k+'</span><div class="mf-bar"><div class="mf-fill" style="width:'+s[k]+'%;background:'+FC[k]+'"></div></div><span style="font-size:10px;color:var(--text3)">'+s[k]+'</span></div>';
+  }).join('');
+}
+
+function goReady() {
+  var ak = (document.getElementById('arena-ak').value||'').trim();
+  if (!ak) { toast('Paste your Anthropic API key in the box below first.'); return; }
+  var btn = document.getElementById('ready-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>starting camera...';
+
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}).then(function(stream) {
+    arenaStream = stream;
+    document.getElementById('my-cam').srcObject = stream;
+    btn.innerHTML = '<span class="spinner"></span>waiting for opponent...';
+    document.getElementById('wait-sub').textContent = 'camera on - waiting for opponent to ready up...';
+
+    sbPatch('players', {id: st.userId}, {ready: true, face_overall: null});
+
+    arenaPollTimer = setInterval(function() {
+      sbGet('players', {room_id: st.roomId}, 100).then(function(res) {
+        var others = (res.data||[]).filter(function(p){ return p.id !== st.userId && p.ready; });
+        if (others.length > 0) {
+          clearInterval(arenaPollTimer); arenaPollTimer = null;
+          var opponent = others[Math.floor(Math.random()*others.length)];
+          startLiveMatch(opponent, ak);
+        }
+      });
+    }, 2000);
+
+  }).catch(function() {
+    toast('Camera access denied.');
+    btn.disabled = false; btn.textContent = "i'm ready to mog";
+  });
+}
+
+function startLiveMatch(opponent, ak) {
+  arenaMatchup = {opponent: opponent};
+  document.getElementById('a-waiting').style.display = 'none';
+  document.getElementById('a-scanning').style.display = 'flex';
+  document.getElementById('fl-nm').textContent = esc(st.user);
+  document.getElementById('fl-el').textContent = 'ELO ' + (st.elo||1200);
+  document.getElementById('fr-nm').textContent = esc(opponent.name);
+  document.getElementById('fr-el').textContent = 'ELO ' + (opponent.elo||1200);
+
+  setTimeout(function() {
+    var b64 = null;
+    try { b64 = capArenaFrame(); } catch(e) { toast('Could not capture frame.'); resetArena(); return; }
+    document.getElementById('my-scan-ov').style.display = 'flex';
+
+    var prompt = 'Analyze the face in this image. Respond ONLY with valid JSON, no markdown, no explanation. Schema: {"symmetry":<0-100>,"jawline":<0-100>,"eyes":<0-100>,"skin":<0-100>,"overall":<0-100>,"strengths":["feature","feature"],"weaknesses":["feature","feature"],"vibe":"2-3 word phrase"} Be honest but fair. If no face visible, all scores 0.';
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+        {type:'text',text:prompt}
+      ]}]})
+    }).then(function(res) {
+      b64 = null;
+      return res.json().then(function(data) {
+        if (!res.ok) throw new Error((data.error&&data.error.message)||'API error');
+        var raw = data.content.map(function(x){return x.text||'';}).join('').replace(/```json|```/g,'').trim();
+        var scores = JSON.parse(raw);
+        var s = {symmetry:cl(scores.symmetry),jawline:cl(scores.jawline),eyes:cl(scores.eyes),skin:cl(scores.skin),overall:cl(scores.overall)};
+        var newElo = Math.round(900 + s.overall*4);
+
+        sbPatch('players',{id:st.userId},{
+          face_overall:s.overall,face_symmetry:s.symmetry,face_jawline:s.jawline,
+          face_eyes:s.eyes,face_skin:s.skin,face_vibe:scores.vibe||null,
+          face_strengths:(Array.isArray(scores.strengths)?scores.strengths:[]).join('|'),
+          face_weaknesses:(Array.isArray(scores.weaknesses)?scores.weaknesses:[]).join('|'),
+          elo:newElo, ready:false
+        });
+        if (st.accountId) sbPatch('accounts',{id:st.accountId},{face_overall:s.overall,face_symmetry:s.symmetry,face_jawline:s.jawline,face_eyes:s.eyes,face_skin:s.skin,elo:newElo});
+        st.elo = newElo; arenaMatchup.myScores = s;
+        document.getElementById('my-scan-ov').style.display = 'none';
+        stopArenaStream();
+        document.getElementById('fl-pl').innerHTML = buildPill(s.overall);
+        document.getElementById('fl-ft').innerHTML = buildFeats(s);
+        document.getElementById('fr-pl').innerHTML = '<div class="spill sp-lo"><div class="spinner"></div>waiting for opponent scan...</div>';
+
+        arenaPollTimer = setInterval(function() {
+          sbGet('players',{id:opponent.id},1).then(function(pres) {
+            var p = (pres.data||[])[0];
+            if (p && p.face_overall != null && !p.ready) {
+              clearInterval(arenaPollTimer); arenaPollTimer = null;
+              arenaMatchup.opponent = p;
+              openVoting(p, s, newElo);
+            }
+          });
+        }, 2000);
+      });
+    }).catch(function(e) {
+      b64=null; toast('AI scan failed: '+e.message); resetArena();
     });
+  }, 2000);
+}
+
+function openVoting(opp, myScores, myElo) {
+  sbPost('matchups',{room_id:st.roomId,left_id:st.userId,right_id:opp.id,votes_left:0,votes_right:0,active:true}).then(function(mres) {
+    var mup = Array.isArray(mres.data)?mres.data[0]:mres.data;
+    var mid = mup && mup.id;
+    st.matchup = {id:mid, L:{id:st.userId,name:st.user,elo:myElo,wins:0,losses:0,account_id:st.accountId}, R:{id:opp.id,name:opp.name,elo:opp.elo||1200,wins:opp.wins||0,losses:opp.losses||0,account_id:opp.account_id}};
+
+    document.getElementById('fl2-nm').textContent = esc(st.user);
+    document.getElementById('fl2-el').textContent = 'ELO '+myElo;
+    document.getElementById('fl2-pl').innerHTML = buildPill(myScores.overall);
+    document.getElementById('fl2-ft').innerHTML = buildFeats(myScores);
+    document.getElementById('fr2-nm').textContent = esc(opp.name);
+    document.getElementById('fr2-el').textContent = 'ELO '+(opp.elo||1200);
+    document.getElementById('fr2-pl').innerHTML = buildPill(opp.face_overall||0);
+    document.getElementById('fr2-ft').innerHTML = buildFeats({symmetry:opp.face_symmetry||0,jawline:opp.face_jawline||0,eyes:opp.face_eyes||0,skin:opp.face_skin||0});
+
+    document.getElementById('a-scanning').style.display = 'none';
+    document.getElementById('a-matchup').style.display = 'flex';
+    document.getElementById('vc-cnt2').textContent = '0 votes';
+    st.voted = false;
+
+    arenaPollTimer = setInterval(function(){
+      if (!mid) return;
+      sbGet('matchups',{id:mid},1).then(function(r){
+        var m = (r.data||[])[0];
+        if (m) { var tot=(m.votes_left||0)+(m.votes_right||0); document.getElementById('vc-cnt2').textContent=tot+' vote'+(tot!==1?'s':''); }
+      });
+    },3000);
   });
 }
 
 function renderFighter(side, p) {
-  document.getElementById('f' + side + '-nm').textContent = esc(p.name);
-  document.getElementById('f' + side + '-el').textContent = 'ELO ' + p.elo;
-  document.getElementById('f' + side + '-img').textContent = '\uD83D\uDC64';
-  var sc = p.face_overall;
-  var pillHtml = sc != null
-    ? '<div class="spill ' + (sc >= 80 ? 'sp-hi' : sc >= 65 ? 'sp-mid' : 'sp-lo') + '">' + sc + '/100</div>'
-    : '<div class="spill sp-lo">no scan</div>';
-  document.getElementById('f' + side + '-pl').innerHTML = pillHtml;
-  var featsHtml = '';
-  if (sc != null) {
-    featsHtml = ['symmetry','jawline','eyes','skin'].map(function(k) {
-      var val = p['face_' + k] || 0;
-      return '<div class="mf-row"><span class="mf-lbl">' + k + '</span><div class="mf-bar"><div class="mf-fill" style="width:' + val + '%;background:' + FC[k] + '"></div></div><span style="font-size:10px;color:var(--text3)">' + val + '</span></div>';
-    }).join('');
-  }
-  document.getElementById('f' + side + '-ft').innerHTML = featsHtml;
+  document.getElementById('f'+side+'-nm').textContent = esc(p.name);
+  document.getElementById('f'+side+'-el').textContent = 'ELO '+p.elo;
 }
 
 function castVote(side) {
-  if (st.voted || !st.matchup) return;
+  if (st.voted||!st.matchup) return;
   st.voted = true;
   var m = st.matchup;
-  var winner = side === 'left' ? m.L : m.R;
-  var loser = side === 'left' ? m.R : m.L;
-  var voteCol = side === 'left' ? 'votes_left' : 'votes_right';
-  if (m.id) {
-    var upd = {winner_id: winner.id, active: false};
-    upd[voteCol] = 1;
-    sbPatch('matchups', {id: m.id}, upd);
-  }
-  var K = 32, wE = winner.elo || 1200, lE = loser.elo || 1200;
-  var exp = 1 / (1 + Math.pow(10, (lE - wE) / 400));
-  var delta = Math.round(K * (1 - exp));
-  var newWElo = wE + delta, newLElo = Math.max(800, lE - delta);
-  sbPatch('players', {id: winner.id}, {elo: newWElo, wins: (winner.wins || 0) + 1});
-  sbPatch('players', {id: loser.id}, {elo: newLElo, losses: (loser.losses || 0) + 1});
-  // Sync ELO back to accounts if they have one
-  if (winner.account_id) sbPatch('accounts', {id: winner.account_id}, {elo: newWElo, wins: (winner.wins || 0) + 1});
-  if (loser.account_id) sbPatch('accounts', {id: loser.account_id}, {elo: newLElo, losses: (loser.losses || 0) + 1});
-  // Update local ELO if we voted on ourselves
-  if (winner.id === st.userId) { st.elo = newWElo; saveSession(); }
-  if (loser.id === st.userId) { st.elo = newLElo; saveSession(); }
-  document.getElementById('fl').className = 'fighter ' + (side === 'left' ? 'fw' : 'fl');
-  document.getElementById('fr').className = 'fighter ' + (side === 'right' ? 'fw' : 'fl');
-  document.getElementById('vote-btns').style.display = 'none';
-  document.getElementById('rf-w').textContent = esc(winner.name) + ' is mogging \uD83D\uDD25';
-  document.getElementById('rf-s').textContent = '+' + delta + ' ELO \xB7 next matchup loading...';
-  document.getElementById('res-flash').style.display = 'block';
+  var winner = side==='left'?m.L:m.R;
+  var loser = side==='left'?m.R:m.L;
+  var voteCol = side==='left'?'votes_left':'votes_right';
+  if (m.id) { var upd={winner_id:winner.id,active:false};upd[voteCol]=1;sbPatch('matchups',{id:m.id},upd); }
+  var K=32,wE=winner.elo||1200,lE=loser.elo||1200;
+  var exp=1/(1+Math.pow(10,(lE-wE)/400));
+  var delta=Math.round(K*(1-exp));
+  var newWElo=wE+delta, newLElo=Math.max(800,lE-delta);
+  sbPatch('players',{id:winner.id},{elo:newWElo,wins:(winner.wins||0)+1});
+  sbPatch('players',{id:loser.id},{elo:newLElo,losses:(loser.losses||0)+1});
+  if (winner.account_id) sbPatch('accounts',{id:winner.account_id},{elo:newWElo,wins:(winner.wins||0)+1});
+  if (loser.account_id) sbPatch('accounts',{id:loser.account_id},{elo:newLElo,losses:(loser.losses||0)+1});
+  if (winner.id===st.userId){st.elo=newWElo;saveSession();}
+  if (loser.id===st.userId){st.elo=newLElo;saveSession();}
+  document.getElementById('fl2').className='fighter '+(side==='left'?'fw':'fl');
+  document.getElementById('fr2').className='fighter '+(side==='right'?'fw':'fl');
+  document.getElementById('vote-btns').style.display='none';
+  document.getElementById('rf-w').textContent=esc(winner.name)+' is mogging';
+  document.getElementById('rf-s').textContent='+'+delta+' ELO - click new match to go again';
+  document.getElementById('res-flash').style.display='block';
+  if (arenaPollTimer){clearInterval(arenaPollTimer);arenaPollTimer=null;}
   renderLB();
-  setTimeout(loadMatchup, 2200);
 }
+
 
 // ── GALLERY ──
 function loadGallery() {
