@@ -272,6 +272,7 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
           </div>
           <p id="wait-sub">looking for an opponent...</p>
           <small>both players click ready to start a match</small>
+          <div id="arena-debug" style="margin-top:8px;font-size:11px;color:var(--amber);font-family:'DM Mono',monospace;min-height:16px"></div>
           <div style="margin-top:1rem;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="btn btn-primary" id="ready-btn" onclick="goReady()">i'm ready to mog</button>
             <button class="btn" onclick="resetArena()">refresh</button>
@@ -744,6 +745,22 @@ function leaveRoom(){
 function startPolling(){
   chatPollTimer=setInterval(function(){if(st.roomId)pollChat();},3000);
   lbPollTimer=setInterval(function(){if(st.roomId)renderLB();},8000);
+  // Heartbeat - update last_seen every 20s
+  setInterval(function(){
+    if(st.userId) sbPatch('players',{id:st.userId},{last_seen:new Date().toISOString(),online:true});
+  },20000);
+  // Mark stale players offline every 30s
+  setInterval(function(){
+    if(!st.roomId) return;
+    var cutoff=new Date(Date.now()-60000).toISOString();
+    sbGet('players',{room_id:st.roomId},100).then(function(res){
+      (res.data||[]).forEach(function(p){
+        if(p.id!==st.userId&&p.online&&p.last_seen&&p.last_seen<cutoff){
+          sbPatch('players',{id:p.id},{online:false,ready:false});
+        }
+      });
+    });
+  },30000);
 }
 
 // ── ARENA ──
@@ -811,14 +828,22 @@ function goReady(){
     document.getElementById('wait-sub').textContent='camera on \xB7 finding opponent in room...';
     sbPatch('players',{id:st.userId},{ready:true,face_overall:null,rtc_offer:null,rtc_answer:null});
     // Fast poll every 600ms
+    var pollCount=0;
     arenaPollTimer=setInterval(function(){
       if(arenaMatchup) return;
+      pollCount++;
       sbGet('players',{room_id:st.roomId},100).then(function(res){
-        var others=(res.data||[]).filter(function(p){return p.id!==st.userId&&p.ready;});
+        var all=res.data||[];
+        var others=all.filter(function(p){return p.id!==st.userId&&p.ready;});
+        var dbg=document.getElementById('arena-debug');
+        if(dbg) dbg.textContent='poll #'+pollCount+': '+all.length+' players in room, '+others.length+' ready opponents';
         if(others.length>0&&!arenaMatchup){
           clearInterval(arenaPollTimer); arenaPollTimer=null;
           startMatch(others[0]);
         }
+      }).catch(function(e){
+        var dbg=document.getElementById('arena-debug');
+        if(dbg) dbg.textContent='poll error: '+e.message;
       });
     },600);
   }).catch(function(e){toast('Camera denied.');btn.disabled=false;btn.textContent="i'm ready to mog";});
