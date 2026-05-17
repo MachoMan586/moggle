@@ -146,6 +146,18 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
 .mog-bar-left{height:100%;background:var(--red);border-radius:99px 0 0 99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .mog-bar-right{height:100%;background:var(--blue,#378ADD);border-radius:0 99px 99px 0;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .mog-verdict{text-align:center;font-size:13px;font-weight:700;margin-top:8px;font-family:'DM Mono',monospace}
+.match-timer{font-size:48px;font-weight:800;font-family:'DM Mono',monospace;color:var(--red);line-height:1;text-align:center}
+.match-timer.ending{animation:timerpulse .5s ease-in-out infinite}
+@keyframes timerpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.live-score{font-size:22px;font-weight:800;line-height:1;transition:all .3s}
+.live-score.winning{color:var(--green)}.live-score.losing{color:var(--red)}.live-score.tied{color:var(--amber)}
+.live-bar-wrap{width:100%;max-width:660px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
+.live-bar-names{display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);margin-bottom:5px}
+.live-bar-track{height:14px;background:var(--bg3);border-radius:99px;overflow:hidden;display:flex;position:relative}
+.live-bar-l{height:100%;background:var(--red);border-radius:99px 0 0 99px;transition:width .4s ease}
+.live-bar-r{height:100%;background:#378ADD;border-radius:0 99px 99px 0;transition:width .4s ease}
+.live-bar-mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--border2);transform:translateX(-50%)}
+.live-status{text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);margin-top:5px}
 /* RANKS */
 .rank-tiers{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:.5rem}
 .rank-tier{font-size:11px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:99px;border:1px solid var(--border);background:var(--bg3)}
@@ -290,10 +302,23 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
         <video id="my-cam" autoplay playsinline muted style="display:none"></video>
         <video id="their-cam" autoplay playsinline style="display:none"></video>
 
-        <div id="a-scanning" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
-          <div style="font-size:13px;color:var(--text2);text-align:center">
-            cameras connecting &middot; AI analyzing your face...
-            <span id="conn-status" style="margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">connecting...</span>
+        <div id="a-scanning" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:.75rem;align-items:center">
+          <div style="text-align:center">
+            <div class="match-timer" id="match-timer">15</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px" id="match-phase">get ready...</div>
+          </div>
+          <div class="live-bar-wrap" id="live-bar-wrap">
+            <div class="live-bar-names">
+              <span id="live-bar-lname">you</span>
+              <span style="color:var(--text3)">live mog score</span>
+              <span id="live-bar-rname">opponent</span>
+            </div>
+            <div class="live-bar-track">
+              <div class="live-bar-l" id="live-bar-l" style="width:50%"></div>
+              <div class="live-bar-r" id="live-bar-r" style="width:50%"></div>
+              <div class="live-bar-mid"></div>
+            </div>
+            <div class="live-status" id="live-status">analyzing...</div>
           </div>
           <div class="match-grid">
             <div class="fighter" id="fl">
@@ -305,11 +330,14 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
               <div class="f-body">
                 <div class="f-name" id="fl-nm">you</div>
                 <div class="f-elo" id="fl-el">ELO -</div>
-                <div id="fl-pl"><div class="spill sp-lo"><div class="spinner"></div>analyzing...</div></div>
+                <div class="live-score tied" id="fl-live-score">-</div>
                 <div class="mf-rows" id="fl-ft"></div>
               </div>
             </div>
-            <div class="vs-col"><div class="vs-txt">VS</div><div class="vc-cnt" id="vc-cnt">0 votes</div></div>
+            <div class="vs-col" style="padding-top:20px">
+              <div class="vs-txt">VS</div>
+              <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px" id="conn-status">connecting...</div>
+            </div>
             <div class="fighter" id="fr">
               <div class="f-img" id="fr-vid-wrap" style="position:relative;overflow:hidden;background:var(--bg3)">
                 <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--text3)" id="fr-placeholder">&#128100;</div>
@@ -317,12 +345,12 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
               <div class="f-body">
                 <div class="f-name" id="fr-nm">opponent</div>
                 <div class="f-elo" id="fr-el">ELO -</div>
-                <div id="fr-pl"><div class="spill sp-lo">waiting...</div></div>
+                <div class="live-score tied" id="fr-live-score">-</div>
                 <div class="mf-rows" id="fr-ft"></div>
               </div>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">video is peer-to-peer. face analysis runs locally. nothing uploaded to any server.</div>
+          <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">AI runs locally &middot; video is peer-to-peer &middot; nothing uploaded</div>
         </div>
 
         <div id="a-matchup" style="display:none;width:100%;max-width:660px;flex-direction:column;gap:1rem;align-items:center">
@@ -871,118 +899,105 @@ function goReady(){
 
 function startMatch(opp){
   arenaMatchup={opponent:opp};
-  // Show scanning UI
   document.getElementById('a-waiting').style.display='none';
   document.getElementById('a-scanning').style.display='flex';
   document.getElementById('fl-nm').textContent=esc(st.user);
   document.getElementById('fl-el').textContent='ELO '+(st.elo||1200);
   document.getElementById('fr-nm').textContent=esc(opp.name);
   document.getElementById('fr-el').textContent='ELO '+(opp.elo||1200);
-  // Move my cam into fighter box
-  var myVid=document.getElementById('my-cam');
-  placeVid(myVid,'fl-vid-wrap',true);
-  // Place their video placeholder
-  var theirVid=document.getElementById('their-cam');
-  placeVid(theirVid,'fr-vid-wrap',false);
-  // Start WebRTC - lower ID is caller
-  var isCaller=st.userId<opp.id;
-  initWebRTC(opp, isCaller);
-  // Show scan overlay and analyze
+  document.getElementById('live-bar-lname').textContent=esc(st.user);
+  document.getElementById('live-bar-rname').textContent=esc(opp.name);
+  // Place videos
+  placeVid(document.getElementById('my-cam'),'fl-vid-wrap',true);
+  placeVid(document.getElementById('their-cam'),'fr-vid-wrap',false);
+  // Start WebRTC
+  initWebRTC(opp, st.userId<opp.id);
+  // 3s countdown then start match
+  var countdown=3;
+  document.getElementById('match-timer').textContent=countdown;
+  document.getElementById('match-phase').textContent='get ready...';
   document.getElementById('my-scan-ov').style.display='flex';
-  setTimeout(function(){analyzeFace(opp);},2500);
+  var preTimer=setInterval(function(){
+    countdown--;
+    if(countdown>0){document.getElementById('match-timer').textContent=countdown;}
+    else{clearInterval(preTimer);document.getElementById('my-scan-ov').style.display='none';startLiveTimer(opp);}
+  },1000);
 }
 
-function initWebRTC(opp, isCaller){
-  pc=new RTCPeerConnection({iceServers:[
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'}
-  ]});
-  arenaStream.getTracks().forEach(function(t){pc.addTrack(t,arenaStream);});
-  pc.ontrack=function(e){
-    if(e.streams&&e.streams[0]){
-      var tv=document.getElementById('their-cam');
-      tv.srcObject=e.streams[0]; tv.play();
-      var ph=document.getElementById('fr-placeholder'); if(ph) ph.style.display='none';
-      document.getElementById('conn-status').textContent='live';
-      document.getElementById('conn-status').style.color='var(--green)';
-    }
-  };
-  pc.onicecandidate=function(e){
-    if(e.candidate) iceBuf.push(e.candidate.toJSON());
-  };
-  if(isCaller){
-    pc.createOffer().then(function(o){return pc.setLocalDescription(o);}).then(function(){
-      // Wait for ICE gathering then save offer
-      setTimeout(function(){
-        sbPatch('players',{id:st.userId},{rtc_offer:JSON.stringify({sdp:pc.localDescription,ice:iceBuf})});
-        iceBuf=[];
-        // Poll for answer
-        var answerTimer=setInterval(function(){
-          sbGet('players',{id:opp.id},1).then(function(r){
-            var p=(r.data||[])[0];
-            if(p&&p.rtc_answer){
-              clearInterval(answerTimer);
-              var d=JSON.parse(p.rtc_answer);
-              pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
-                (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
-              });
-            }
-          });
-        },600);
-      },1500);
+var matchTimerInterval=null, liveAnalysisInterval=null, liveOppPollTimer=null;
+var myLiveScore=0, oppLiveScore=0;
+
+function startLiveTimer(opp){
+  var timeLeft=15;
+  document.getElementById('match-timer').textContent=timeLeft;
+  document.getElementById('match-phase').textContent='match live!';
+  // Scan my face every 2s
+  liveAnalysisInterval=setInterval(function(){
+    analyzeFaceFromVideo(document.getElementById('my-cam'),function(scores){
+      if(!scores||scores.overall===0) return;
+      myLiveScore=scores.overall;
+      arenaMatchup.myScores=scores;
+      document.getElementById('fl-live-score').textContent=scores.overall+'/100';
+      document.getElementById('fl-ft').innerHTML=buildFeats(scores);
+      updateLiveBar();
+      // Push my score to DB so opponent can see it
+      sbPatch('players',{id:st.userId},{face_overall:scores.overall,face_symmetry:scores.symmetry,face_jawline:scores.jawline,face_eyes:scores.eyes,face_skin:scores.canthal});
     });
-  } else {
-    // Answer side - poll for offer
-    var offerTimer=setInterval(function(){
-      sbGet('players',{id:opp.id},1).then(function(r){
-        var p=(r.data||[])[0];
-        if(p&&p.rtc_offer){
-          clearInterval(offerTimer);
-          var d=JSON.parse(p.rtc_offer);
-          pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
-            (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
-            return pc.createAnswer();
-          }).then(function(a){return pc.setLocalDescription(a);}).then(function(){
-            setTimeout(function(){
-              sbPatch('players',{id:st.userId},{rtc_answer:JSON.stringify({sdp:pc.localDescription,ice:iceBuf})});
-              iceBuf=[];
-            },1500);
-          });
-        }
-      });
-    },600);
-  }
+  },2000);
+  // Poll opponent score every 1.5s
+  liveOppPollTimer=setInterval(function(){
+    sbGet('players',{id:opp.id},1).then(function(pres){
+      var p=(pres.data||[])[0];
+      if(p&&p.face_overall!=null){
+        oppLiveScore=p.face_overall;
+        document.getElementById('fr-live-score').textContent=p.face_overall+'/100';
+        document.getElementById('fr-ft').innerHTML=buildFeats({symmetry:p.face_symmetry||0,jawline:p.face_jawline||0,eyes:p.face_eyes||0,canthal:p.face_skin||0});
+        updateLiveBar();
+      }
+    });
+  },1500);
+  // Countdown
+  matchTimerInterval=setInterval(function(){
+    timeLeft--;
+    document.getElementById('match-timer').textContent=timeLeft;
+    if(timeLeft<=5) document.getElementById('match-timer').classList.add('ending');
+    if(timeLeft<=0) endMatch(opp);
+  },1000);
 }
 
-function analyzeFace(opp){
-  var v=document.getElementById('my-cam');
-  analyzeFaceFromVideo(v,function(scores){
-    document.getElementById('my-scan-ov').style.display='none';
-    if(!scores||scores.overall===0){
-      scores={symmetry:55+Math.round(Math.random()*30),jawline:50+Math.round(Math.random()*30),eyes:55+Math.round(Math.random()*30),canthal:50+Math.round(Math.random()*30),overall:0};
-      scores.overall=Math.round(scores.symmetry*0.35+scores.jawline*0.25+scores.eyes*0.25+scores.canthal*0.15);
-    }
-    var newElo=Math.round(900+scores.overall*4);
-    st.elo=newElo; arenaMatchup.myScores=scores;
-    sbPatch('players',{id:st.userId},{face_overall:scores.overall,face_symmetry:scores.symmetry,face_jawline:scores.jawline,face_eyes:scores.eyes,face_skin:scores.canthal,elo:newElo,ready:false});
-    if(st.accountId){sbPatch('accounts',{id:st.accountId},{face_overall:scores.overall,elo:newElo});saveSession();}
-    updateRankBadge();
-    document.getElementById('fl-pl').innerHTML=buildPill(scores.overall);
-    document.getElementById('fl-ft').innerHTML=buildFeats(scores);
-    document.getElementById('fr-pl').innerHTML='<div class="spill sp-lo"><div class="spinner"></div>waiting for opponent score...</div>';
-    // Poll for opponent score
-    oppPollTimer=setInterval(function(){
-      sbGet('players',{id:opp.id},1).then(function(pres){
-        var p=(pres.data||[])[0];
-        if(p&&p.face_overall!=null&&!p.ready){
-          clearInterval(oppPollTimer); oppPollTimer=null;
-          arenaMatchup.opponent=p;
-          openVoting(p,scores,newElo);
-        }
-      });
-    },1000);
+function updateLiveBar(){
+  var total=myLiveScore+oppLiveScore;if(total===0) return;
+  var lPct=Math.round(myLiveScore/total*100),rPct=100-lPct;
+  document.getElementById('live-bar-l').style.width=lPct+'%';
+  document.getElementById('live-bar-r').style.width=rPct+'%';
+  var diff=myLiveScore-oppLiveScore;
+  var myEl=document.getElementById('fl-live-score');
+  var oppEl=document.getElementById('fr-live-score');
+  if(diff>5){myEl.className='live-score winning';oppEl.className='live-score losing';document.getElementById('live-status').textContent='you are mogging ('+myLiveScore+' vs '+oppLiveScore+')';}
+  else if(diff<-5){myEl.className='live-score losing';oppEl.className='live-score winning';document.getElementById('live-status').textContent=document.getElementById('fr-nm').textContent+' is mogging ('+oppLiveScore+' vs '+myLiveScore+')';}
+  else{myEl.className='live-score tied';oppEl.className='live-score tied';document.getElementById('live-status').textContent='neck and neck ('+myLiveScore+' vs '+oppLiveScore+')';}
+}
+
+function endMatch(opp){
+  clearInterval(matchTimerInterval);clearInterval(liveAnalysisInterval);clearInterval(liveOppPollTimer);
+  matchTimerInterval=null;liveAnalysisInterval=null;liveOppPollTimer=null;
+  document.getElementById('match-timer').textContent='GG';
+  document.getElementById('match-timer').classList.remove('ending');
+  document.getElementById('match-phase').textContent='match over - room is voting';
+  var s=arenaMatchup.myScores||{symmetry:60,jawline:60,eyes:60,canthal:60,overall:myLiveScore||60};
+  var newElo=Math.round(900+s.overall*4);st.elo=newElo;
+  sbPatch('players',{id:st.userId},{face_overall:s.overall,face_symmetry:s.symmetry,face_jawline:s.jawline,face_eyes:s.eyes,face_skin:s.canthal,elo:newElo,ready:false});
+  if(st.accountId){sbPatch('accounts',{id:st.accountId},{face_overall:s.overall,elo:newElo});saveSession();}
+  updateRankBadge();
+  sbGet('players',{id:opp.id},1).then(function(pres){
+    var p=(pres.data||[])[0]||opp;
+    arenaMatchup.opponent=p;
+    openVoting(p,s,newElo);
   });
 }
+
+function analyzeFace(){/* replaced by startLiveTimer */}
+
 
 function openVoting(opp,myScores,myElo){
   sbPost('matchups',{room_id:st.roomId,left_id:st.userId,right_id:opp.id,votes_left:0,votes_right:0,active:true}).then(function(mres){
