@@ -1069,19 +1069,139 @@ function endMatch(opp){
   arenaTimer=scanTimer=oppScoreTimer=null;
   document.getElementById('timer').textContent='GG';
   document.getElementById('timer').classList.remove('pulse');
-  document.getElementById('phase').textContent='match over \xB7 vote now';
-  var myS=myLiveScore||60;
-  var myPSL=Math.round(myS/10*10)/10; // keep as 0-100 internally, show as PSL
-  var newElo=Math.round(900+myS*4);st.elo=newElo;
-  sbPatch('players',{id:st.userId},{face_overall:myS,elo:newElo,ready:false});
-  if(st.accountId){sbPatch('accounts',{id:st.accountId},{face_overall:myS,elo:newElo});saveSession();}
+  document.getElementById('phase').textContent='calculating result...';
+
+  var myS = myLiveScore || 60;
+  var myPSL = parseFloat((myS/10).toFixed(1));
+  var newElo = Math.round(900 + myS*4);
+  st.elo = newElo;
+
+  // Save my final score
+  sbPatch('players',{id:st.userId},{face_overall:myS, elo:newElo, ready:false});
+  if(st.accountId){ sbPatch('accounts',{id:st.accountId},{face_overall:myS, elo:newElo}); saveSession(); }
   updateElo();
-  sbGet('players',{id:opp.id},1).then(function(r){
-    var p=(r.data||[])[0]||opp;
-    arenaOpp=p;
-    openVoting(p,myS,newElo);
-  });
+
+  var isCaller = st.userId < opp.id;
+
+  if(isCaller){
+    // CALLER decides the result after both scores are in DB
+    // Poll until opponent has their final score saved
+    var attempts = 0;
+    var wait = setInterval(function(){
+      attempts++;
+      sbGet('players',{id:opp.id},1).then(function(r){
+        var p = (r.data||[])[0];
+        if((p && p.face_overall != null && !p.ready) || attempts > 10){
+          clearInterval(wait);
+          var oppS = p ? (p.face_overall||0) : 0;
+          var matchId = 'match_'+[st.userId,opp.id].sort().join('_');
+          // Determine winner by score
+          var myWins = myS >= oppS;
+          var result = {
+            winner_id: myWins ? st.userId : opp.id,
+            my_score: myS,
+            opp_score: oppS,
+            timestamp: Date.now()
+          };
+          // Save result to a dedicated match result row
+          sbPost('matchups',{
+            room_id:st.roomId,
+            left_id:st.userId,
+            right_id:opp.id,
+            winner_id:result.winner_id,
+            votes_left:myS,    // reuse votes_left/right to store scores
+            votes_right:oppS,
+            active:false
+          }).then(function(mr){
+            var mup = Array.isArray(mr.data)?mr.data[0]:mr.data;
+            // Also save result ID to both player rows so both can find it
+            if(mup && mup.id){
+              sbPatch('players',{id:st.userId},{rtc_answer: 'result:'+mup.id});
+              sbPatch('players',{id:opp.id},{rtc_answer: 'result:'+mup.id});
+            }
+            showResult(result.winner_id, myS, oppS, opp, newElo);
+          });
+        }
+      });
+    }, 800);
+  } else {
+    // ANSWER side: poll for result saved by caller
+    document.getElementById('phase').textContent = 'waiting for result...';
+    var attempts2 = 0;
+    var waitRes = setInterval(function(){
+      attempts2++;
+      sbGet('players',{id:st.userId},1).then(function(r){
+        var me = (r.data||[])[0];
+        var tag = me && me.rtc_answer;
+        if(tag && tag.indexOf('result:') === 0){
+          clearInterval(waitRes);
+          var matchupId = tag.replace('result:','');
+          sbGet('matchups',{id:matchupId},1).then(function(mr){
+            var m = (mr.data||[])[0];
+            if(m){
+              showResult(m.winner_id, m.votes_left||0, m.votes_right||0, opp, newElo);
+            }
+          });
+        } else if(attempts2 > 15){
+          // Fallback: calculate locally
+          clearInterval(waitRes);
+          sbGet('players',{id:opp.id},1).then(function(r){
+            var p = (r.data||[])[0];
+            var oppS = p ? (p.face_overall||0) : 0;
+            var winnerId = myS >= oppS ? st.userId : opp.id;
+            showResult(winnerId, myS, oppS, opp, newElo);
+          });
+        }
+      });
+    }, 800);
+  }
 }
+
+function showResult(winnerId, myS, oppS, opp, myElo){
+  var iWon = winnerId === st.userId;
+  var myPSL = (myS/10).toFixed(1);
+  var oppPSL = (oppS/10).toFixed(1);
+  var winnerName = iWon ? st.user : opp.name;
+  var winnerElo = iWon ? myElo : (opp.elo||1200);
+  var loserElo = iWon ? (opp.elo||1200) : myElo;
+  var K=32;
+  var exp=1/(1+Math.pow(10,(loserElo-winnerElo)/400));
+  var delta=Math.round(K*(1-exp));
+  var nwE=winnerElo+delta, nlE=Math.max(800,loserElo-delta);
+
+  // Only update ELO if we're the winner (avoid double update from both sides)
+  if(iWon){
+    sbPatch('players',{id:st.userId},{elo:nwE, wins:1});
+    sbPatch('players',{id:opp.id},{elo:nlE});
+    if(st.accountId) sbPatch('accounts',{id:st.accountId},{elo:nwE});
+    st.elo = nwE; saveSession(); updateElo();
+  } else {
+    sbPatch('players',{id:st.userId},{elo:nlE});
+    if(st.accountId) sbPatch('accounts',{id:st.accountId},{elo:nlE});
+    st.elo = nlE; saveSession(); updateElo();
+  }
+
+  // Show mog bar
+  var myPct = Math.round(myS/(myS+oppS+0.001)*100);
+  document.getElementById('mb-l').style.width=myPct+'%';
+  document.getElementById('mb-r').style.width=(100-myPct)+'%';
+  document.getElementById('mb-ln').textContent=esc(st.user);
+  document.getElementById('mb-rn').textContent=esc(opp.name);
+  var gap=Math.abs(myS-oppS);
+  var word=gap>=15?'hard mogging':gap>=8?'mogging':'slightly mogging';
+  document.getElementById('mb-v').textContent='PSL '+myPSL+' vs '+oppPSL+' · '+esc(winnerName)+' is '+word;
+  document.getElementById('mog-bar').style.display='block';
+  document.getElementById('f-left').className='fighter'+(iWon?' fw':' fl');
+  document.getElementById('f-right').className='fighter'+(iWon?' fl':' fw');
+  var wr=getRank(iWon?nwE:nlE);
+  document.getElementById('result-w').textContent=esc(winnerName)+' mogged · now '+wr.name;
+  document.getElementById('result-s').textContent=(iWon?'+':'−')+delta+' ELO · PSL: you '+myPSL+' vs '+oppPSL;
+  document.getElementById('phase').textContent='match over';
+  document.getElementById('result').style.display='block';
+  document.getElementById('new-match-btn').style.display='inline-block';
+  renderLB();
+}
+
 
 function openVoting(opp, myScore, myElo){
   // Omoggle style: higher AI score wins automatically
