@@ -897,6 +897,102 @@ function goReady(){
   }).catch(function(e){toast('Camera denied.');btn.disabled=false;btn.textContent="i'm ready to mog";});
 }
 
+function initWebRTC(opp, isCaller){
+  pc = new RTCPeerConnection({
+    iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun1.l.google.com:19302'},
+      {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+      {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+      {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+    ],
+    iceCandidatePoolSize:10
+  });
+  // Add local camera tracks
+  if(arenaStream){
+    arenaStream.getTracks().forEach(function(t){pc.addTrack(t, arenaStream);});
+  }
+  // When opponent's video arrives
+  pc.ontrack = function(e){
+    if(e.streams && e.streams[0]){
+      var tv = document.getElementById('their-cam');
+      tv.srcObject = e.streams[0];
+      tv.play().catch(function(){});
+      var ph = document.getElementById('fr-placeholder');
+      if(ph) ph.style.display = 'none';
+      document.getElementById('conn-status').textContent = 'live';
+      document.getElementById('conn-status').style.color = 'var(--green)';
+    }
+  };
+  // Buffer ICE candidates
+  pc.onicecandidate = function(e){
+    if(e.candidate) iceBuf.push(e.candidate.toJSON());
+  };
+  pc.onconnectionstatechange = function(){
+    var s = pc.connectionState;
+    document.getElementById('conn-status').textContent = s;
+    if(s === 'connected') document.getElementById('conn-status').style.color = 'var(--green)';
+    if(s === 'failed'){
+      document.getElementById('conn-status').textContent = 'p2p failed - scores still live';
+      document.getElementById('conn-status').style.color = 'var(--red)';
+    }
+  };
+
+  function saveAndPoll(){
+    // Wait for ICE gathering then save
+    var waited = 0;
+    var check = setInterval(function(){
+      waited += 300;
+      if(pc.iceGatheringState === 'complete' || waited >= 4000){
+        clearInterval(check);
+        if(isCaller){
+          sbPatch('players',{id:st.userId},{rtc_offer:JSON.stringify({sdp:pc.localDescription, ice:iceBuf})});
+          iceBuf = [];
+          // Poll for answer
+          var t = setInterval(function(){
+            sbGet('players',{id:opp.id},1).then(function(r){
+              var p=(r.data||[])[0];
+              if(p && p.rtc_answer){
+                clearInterval(t);
+                var d = JSON.parse(p.rtc_answer);
+                pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
+                  (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
+                });
+              }
+            });
+          }, 500);
+        } else {
+          sbPatch('players',{id:st.userId},{rtc_answer:JSON.stringify({sdp:pc.localDescription, ice:iceBuf})});
+          iceBuf = [];
+        }
+      }
+    }, 300);
+  }
+
+  if(isCaller){
+    pc.createOffer().then(function(o){
+      return pc.setLocalDescription(o);
+    }).then(saveAndPoll);
+  } else {
+    // Poll for offer
+    var offerPoll = setInterval(function(){
+      sbGet('players',{id:opp.id},1).then(function(r){
+        var p=(r.data||[])[0];
+        if(p && p.rtc_offer){
+          clearInterval(offerPoll);
+          var d = JSON.parse(p.rtc_offer);
+          pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
+            (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
+            return pc.createAnswer();
+          }).then(function(a){
+            return pc.setLocalDescription(a);
+          }).then(saveAndPoll);
+        }
+      });
+    }, 500);
+  }
+}
+
 function startMatch(opp){
   arenaMatchup={opponent:opp};
   document.getElementById('a-waiting').style.display='none';
