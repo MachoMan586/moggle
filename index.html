@@ -93,7 +93,10 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
 @keyframes sln{0%{top:20%}100%{top:80%}}
 /* CHAT */
 .chat-sb{width:236px;border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.chat-top{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2)}
+.chat-top{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:4px;background:var(--bg2)}
+.chat-mode-btn{font-size:11px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s}
+.chat-mode-btn.active{background:var(--red);border-color:var(--red);color:#fff}
+.chat-mode-btn:hover:not(.active){color:var(--text2)}
 .chat-top span{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;flex:1}
 .rpt-btn{font-size:11px;color:var(--red);background:var(--red-bg);border:1px solid #2a0808;border-radius:6px;padding:3px 9px;cursor:pointer}
 .chat-msgs{flex:1;overflow-y:auto;padding:.7rem 10px;display:flex;flex-direction:column;gap:7px}
@@ -403,8 +406,13 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
       </div>
 
       <div class="chat-sb">
-        <div class="chat-top"><span>live chat</span><button class="rpt-btn" onclick="openReport()">&#9872; report</button></div>
-        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="chat-top">
+          <button class="chat-mode-btn active" id="chat-mode-match" onclick="setChatMode('match')">match</button>
+          <button class="chat-mode-btn" id="chat-mode-room" onclick="setChatMode('room')">room</button>
+          <button class="rpt-btn" style="margin-left:auto" onclick="openReport()">&#9872; report</button>
+        </div>
+        <div class="chat-msgs" id="match-chat-msgs"></div>
+        <div class="chat-msgs" id="room-chat-msgs" style="display:none"></div>
         <div class="chat-form">
           <textarea id="chat-in" placeholder="say something..." onkeydown="chatKey(event)"></textarea>
           <button class="send-btn" onclick="sendChat()">&rarr;</button>
@@ -815,13 +823,7 @@ function startPolling(){
 var arenaStream=null, arenaMatchup=null, arenaPollTimer=null, oppPollTimer=null;
 var pc=null, iceBuf=[];
 
-var RANKS=[
-  {name:'Molecule',min:0,color:'#888'},{name:'Sub3',min:800,color:'#cd7f32'},
-  {name:'LTN',min:1000,color:'#aaa'},{name:'MTN',min:1200,color:'#fff'},
-  {name:'HTN',min:1400,color:'#378ADD'},{name:'Chadlite',min:1600,color:'#EF9F27'},
-  {name:'Chad',min:1800,color:'#E24B4A'},{name:'Slayer',min:2000,color:'#1D9E75'}
-];
-function getRank(elo){for(var i=RANKS.length-1;i>=0;i--){if(elo>=RANKS[i].min)return RANKS[i];}return RANKS[0];}
+// RANKS defined above
 
 function buildPill(score){
   var cls=score>=80?'sp-hi':score>=65?'sp-mid':'sp-lo';
@@ -857,6 +859,8 @@ function resetArena(){
   document.getElementById('fl-ft').innerHTML=''; document.getElementById('fr-ft').innerHTML='';
   st.voted=false;
   if(st.userId) sbPatch('players',{id:st.userId},{ready:false,rtc_offer:null,rtc_answer:null});
+  stopMatchChat();
+  setChatMode('room');
 }
 function loadMatchup(){resetArena();}
 function stopArenaStream(){if(arenaStream){arenaStream.getTracks().forEach(function(t){t.stop();});arenaStream=null;}}
@@ -1008,6 +1012,9 @@ function startMatch(opp){
   placeVid(document.getElementById('their-cam'),'fr-vid-wrap',false);
   // Start WebRTC
   initWebRTC(opp, st.userId<opp.id);
+  // Start match chat and switch to match mode
+  startMatchChat(opp.id);
+  setChatMode('match');
   // 3s countdown then start match
   var countdown=3;
   document.getElementById('match-timer').textContent=countdown;
@@ -1232,28 +1239,95 @@ function renderMembers(){
 }
 
 // CHAT
+var chatMode='match'; // 'match' or 'room'
+var lastMatchChatIds=[], lastRoomChatIds=[];
+var matchChatPollTimer=null;
+
+function setChatMode(mode){
+  chatMode=mode;
+  document.getElementById('chat-mode-match').classList.toggle('active',mode==='match');
+  document.getElementById('chat-mode-room').classList.toggle('active',mode==='room');
+  document.getElementById('match-chat-msgs').style.display=mode==='match'?'flex':'none';
+  document.getElementById('room-chat-msgs').style.display=mode==='room'?'flex':'none';
+  var ph=document.getElementById('chat-in');
+  ph.placeholder=mode==='match'?'message opponent...':'message room...';
+}
+
 function loadChat(){
+  // Load room chat
   sbGet('messages',{room_id:st.roomId},60,'created_at.asc').then(function(res){
-    var msgs=res.data||[];document.getElementById('chat-msgs').innerHTML='';msgs.forEach(appendMsg);
-    lastChatIds=msgs.map(function(m){return m.id;});
+    var msgs=res.data||[];
+    document.getElementById('room-chat-msgs').innerHTML='';
+    msgs.forEach(function(m){appendMsg(m,'room');});
+    lastRoomChatIds=msgs.map(function(m){return m.id;});
   });
 }
+
+function startMatchChat(oppId){
+  // Clear match chat
+  document.getElementById('match-chat-msgs').innerHTML='';
+  lastMatchChatIds=[];
+  if(matchChatPollTimer){clearInterval(matchChatPollTimer);}
+  // Poll match messages every 1.5s
+  matchChatPollTimer=setInterval(function(){
+    if(!arenaMatchup) return;
+    // Match chat uses a special room_id: sorted pair of player IDs
+    var matchRoomId=st.roomId+'_match_'+[st.userId,oppId].sort().join('_');
+    sbGet('messages',{room_id:matchRoomId},50,'created_at.asc').then(function(res){
+      var msgs=res.data||[];
+      var newMsgs=msgs.filter(function(m){return lastMatchChatIds.indexOf(m.id)===-1;});
+      if(newMsgs.length){
+        newMsgs.forEach(function(m){appendMsg(m,'match');});
+        lastMatchChatIds=msgs.map(function(m){return m.id;});
+      }
+    });
+  },1500);
+}
+
+function stopMatchChat(){
+  if(matchChatPollTimer){clearInterval(matchChatPollTimer);matchChatPollTimer=null;}
+}
+
 function pollChat(){
   sbGet('messages',{room_id:st.roomId},60,'created_at.asc').then(function(res){
-    var msgs=res.data||[];var newMsgs=msgs.filter(function(m){return lastChatIds.indexOf(m.id)===-1;});
-    if(newMsgs.length){newMsgs.forEach(appendMsg);lastChatIds=msgs.map(function(m){return m.id;});}
+    var msgs=res.data||[];
+    var newMsgs=msgs.filter(function(m){return lastRoomChatIds.indexOf(m.id)===-1;});
+    if(newMsgs.length){
+      newMsgs.forEach(function(m){appendMsg(m,'room');});
+      lastRoomChatIds=msgs.map(function(m){return m.id;});
+    }
   });
 }
+
 function sendChat(){
-  var inp=document.getElementById('chat-in');var txt=inp.value.trim();if(!txt) return;
-  inp.value='';sbPost('messages',{room_id:st.roomId,player_id:st.userId,player_name:st.user,text:txt});
-  var c=document.getElementById('chat-msgs');var d=document.createElement('div');d.className='msg mine';d.textContent=txt;c.appendChild(d);c.scrollTop=c.scrollHeight;
+  var inp=document.getElementById('chat-in');
+  var txt=inp.value.trim();if(!txt) return;
+  inp.value='';
+  if(chatMode==='match'&&arenaMatchup){
+    var oppId=arenaMatchup.opponent&&arenaMatchup.opponent.id;
+    if(!oppId){toast('No opponent to chat with yet.');return;}
+    var matchRoomId=st.roomId+'_match_'+[st.userId,oppId].sort().join('_');
+    sbPost('messages',{room_id:matchRoomId,player_id:st.userId,player_name:st.user,text:txt});
+    // Immediately show own message
+    var c=document.getElementById('match-chat-msgs');
+    var d=document.createElement('div');d.className='msg mine';d.textContent=txt;
+    c.appendChild(d);c.scrollTop=c.scrollHeight;
+  } else {
+    sbPost('messages',{room_id:st.roomId,player_id:st.userId,player_name:st.user,text:txt});
+    var c=document.getElementById('room-chat-msgs');
+    var d=document.createElement('div');d.className='msg mine';d.textContent=txt;
+    c.appendChild(d);c.scrollTop=c.scrollHeight;
+  }
 }
-function appendMsg(m){
-  var c=document.getElementById('chat-msgs');var me=m.player_id===st.userId;
+
+function appendMsg(m, target){
+  var elId=target==='match'?'match-chat-msgs':'room-chat-msgs';
+  var container=document.getElementById(elId);
+  if(!container) return;
+  var me=m.player_id===st.userId;
   var d=document.createElement('div');d.className='msg '+(me?'mine':'theirs');
-  d.innerHTML=(me?'':`<div class="msg-nm">`+esc(m.player_name)+'</div>')+esc(m.text);
-  c.appendChild(d);c.scrollTop=c.scrollHeight;
+  d.innerHTML=(me?''+'<div class="msg-nm">'+esc(m.player_name)+'</div>')+esc(m.text);
+  container.appendChild(d);container.scrollTop=container.scrollHeight;
 }
 function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 
