@@ -140,9 +140,7 @@ input,textarea{font-family:'DM Mono',monospace}
 .vote-cnt{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center}
 
 /* VOTE BUTTONS */
-.vote-btns{display:flex;gap:8px;width:100%;max-width:660px}
-.vbtn{flex:1;padding:11px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
-.vbtn:hover:not(:disabled){background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
 .new-match-btn{display:none}
 
 /* RESULT */
@@ -407,9 +405,9 @@ input,textarea{font-family:'DM Mono',monospace}
               </div>
             </div>
           </div>
-          <!-- MOG BAR (shows after vote) -->
+          <!-- MOG BAR -->
           <div class="mog-bar" id="mog-bar">
-            <div class="mb-names"><span id="mb-ln">-</span><span style="color:var(--text3)">AI 70% + vote 30%</span><span id="mb-rn">-</span></div>
+            <div class="mb-names"><span id="mb-ln">-</span><span style="color:var(--text3)">PSL score</span><span id="mb-rn">-</span></div>
             <div class="mb-track"><div class="mb-l" id="mb-l" style="width:50%"></div><div class="mb-r" id="mb-r" style="width:50%"></div></div>
             <div class="mb-verdict" id="mb-v"></div>
           </div>
@@ -417,11 +415,6 @@ input,textarea{font-family:'DM Mono',monospace}
           <div class="result" id="result">
             <div class="result-w" id="result-w">-</div>
             <div class="result-s" id="result-s">-</div>
-          </div>
-          <!-- VOTE BUTTONS -->
-          <div class="vote-btns" id="vote-btns">
-            <button class="vbtn" onclick="castVote('left')">&larr; left mogging</button>
-            <button class="vbtn" onclick="castVote('right')">right mogging &rarr;</button>
           </div>
           <button class="btn btn-p new-match-btn" id="new-match-btn" onclick="resetArena()">&#8635; new match</button>
         </div>
@@ -820,7 +813,7 @@ function resetArena(){
   stopArena();
   document.getElementById('a-wait').style.display='flex';
   document.getElementById('a-match').style.display='none';
-  document.getElementById('vote-btns').style.display='flex';
+  // vote-btns removed
   document.getElementById('result').style.display='none';
   document.getElementById('mog-bar').style.display='none';
   document.getElementById('new-match-btn').style.display='none';
@@ -1090,65 +1083,51 @@ function endMatch(opp){
   });
 }
 
-function openVoting(opp,myScore,myElo){
-  sbPost('matchups',{room_id:st.roomId,left_id:st.userId,right_id:opp.id,votes_left:0,votes_right:0,active:true}).then(function(r){
-    var mup=Array.isArray(r.data)?r.data[0]:r.data;
-    var mid=mup&&mup.id;
-    // Convert 0-100 scores to PSL 0-10 scale for display
-  var myPSL2=Math.round(myScore/10)/1, oppPSL=Math.round((opp.face_overall||0)/10)/1;
-  st.matchup={id:mid,L:{id:st.userId,name:st.user,elo:myElo,wins:0,losses:0,account_id:st.accountId,face:myPSL2},R:{id:opp.id,name:opp.name,elo:opp.elo||1200,wins:opp.wins||0,losses:opp.losses||0,account_id:opp.account_id,face:oppPSL}};
-    document.getElementById('vote-btns').style.display='flex';
-    document.getElementById('f-left').classList.add('clickable');
-    document.getElementById('f-right').classList.add('clickable');
-    st.voted=false;
-    // poll vote count
-    var vp=setInterval(function(){
-      if(!mid)return;
-      sbGet('matchups',{id:mid},1).then(function(r){var m=(r.data||[])[0];if(m){var tot=(m.votes_left||0)+(m.votes_right||0);document.getElementById('vote-cnt').textContent=tot+' vote'+(tot!==1?'s':'');}});
-    },3000);
-  });
-}
-
-function castVote(side){
-  // Omoggle style: audience vote decides winner, AI score shown after
-  if(st.voted||!st.matchup) return;
-  st.voted=true;
-  var m=st.matchup; var L=m.L, R=m.R;
-  var winner=side==='left'?L:R;
-  var loser=side==='left'?R:L;
-  var voteCol=side==='left'?'votes_left':'votes_right';
-  if(m.id){ var upd={winner_id:winner.id}; upd[voteCol]=1; sbPatch('matchups',{id:m.id},upd); }
-  // ELO exchange
+function openVoting(opp, myScore, myElo){
+  // Omoggle style: higher AI score wins automatically
+  var oppScore = opp.face_overall || 0;
+  var myPSL = (myScore/10).toFixed(1);
+  var oppPSL = (oppScore/10).toFixed(1);
+  var iWon = myScore >= oppScore;
+  var winner = iWon
+    ? {id:st.userId, name:st.user, elo:myElo, wins:0, losses:0, account_id:st.accountId}
+    : {id:opp.id, name:opp.name, elo:opp.elo||1200, wins:opp.wins||0, losses:opp.losses||0, account_id:opp.account_id};
+  var loser = iWon
+    ? {id:opp.id, name:opp.name, elo:opp.elo||1200, wins:opp.wins||0, losses:opp.losses||0, account_id:opp.account_id}
+    : {id:st.userId, name:st.user, elo:myElo, wins:0, losses:0, account_id:st.accountId};
   var K=32, wE=winner.elo||1200, lE=loser.elo||1200;
   var exp=1/(1+Math.pow(10,(lE-wE)/400));
   var delta=Math.round(K*(1-exp));
   var nwE=wE+delta, nlE=Math.max(800,lE-delta);
+  sbPost('matchups',{room_id:st.roomId,left_id:st.userId,right_id:opp.id,winner_id:winner.id,votes_left:0,votes_right:0,active:false});
   sbPatch('players',{id:winner.id},{elo:nwE,wins:(winner.wins||0)+1});
   sbPatch('players',{id:loser.id},{elo:nlE,losses:(loser.losses||0)+1});
   if(winner.account_id) sbPatch('accounts',{id:winner.account_id},{elo:nwE,wins:(winner.wins||0)+1});
   if(loser.account_id) sbPatch('accounts',{id:loser.account_id},{elo:nlE,losses:(loser.losses||0)+1});
   if(winner.id===st.userId){ st.elo=nwE; saveSession(); updateElo(); }
   if(loser.id===st.userId){ st.elo=nlE; saveSession(); updateElo(); }
-  // Mog bar - audience voted
-  var lp = side==='left'?65:35;
-  document.getElementById('mb-l').style.width=lp+'%';
-  document.getElementById('mb-r').style.width=(100-lp)+'%';
-  document.getElementById('mb-ln').textContent=esc(L.name);
-  document.getElementById('mb-rn').textContent=esc(R.name);
-  // Reveal AI scores (PSL 0-10) after vote
-  var lPSL=L.face||0, rPSL=R.face||0;
-  document.getElementById('mb-v').textContent=esc(winner.name)+' mogged · PSL: '+lPSL+' vs '+rPSL;
+  var myPct=Math.round(myScore/(myScore+oppScore+0.001)*100);
+  document.getElementById('mb-l').style.width=myPct+'%';
+  document.getElementById('mb-r').style.width=(100-myPct)+'%';
+  document.getElementById('mb-ln').textContent=esc(st.user);
+  document.getElementById('mb-rn').textContent=esc(opp.name);
+  var gap=Math.abs(myScore-oppScore);
+  var word=gap>=15?'hard mogging':gap>=8?'mogging':'slightly mogging';
+  document.getElementById('mb-v').textContent='PSL '+myPSL+' vs '+oppPSL+' · '+esc(winner.name)+' is '+word;
   document.getElementById('mog-bar').style.display='block';
-  document.getElementById('f-left').className='fighter'+(winner.id===L.id?' fw':' fl');
-  document.getElementById('f-right').className='fighter'+(winner.id===R.id?' fw':' fl');
-  document.getElementById('vote-btns').style.display='none';
+  document.getElementById('f-left').className='fighter'+(iWon?' fw':' fl');
+  document.getElementById('f-right').className='fighter'+(iWon?' fl':' fw');
   var wr=getRank(nwE);
   document.getElementById('result-w').textContent=esc(winner.name)+' mogged · now '+wr.name;
-  document.getElementById('result-s').textContent='+'+delta+' ELO · audience voted · PSL scores revealed';
+  document.getElementById('result-s').textContent=(winner.id===st.userId?'+':'−')+delta+' ELO · PSL: you '+myPSL+' vs '+oppPSL;
   document.getElementById('result').style.display='block';
   document.getElementById('new-match-btn').style.display='inline-block';
   renderLB();
 }
+
+
+function castVote(side){ /* removed - AI decides */ }
+
 
 function setChatMode(m){
   chatModeVal=m;
