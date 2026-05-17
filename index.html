@@ -7,6 +7,7 @@
 <title>Moggle</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--text2:#999;--text3:#555;--red:#E24B4A;--red2:#c93d3c;--red-bg:#1a0808;--green:#1D9E75;--green-bg:#041a12;--amber:#EF9F27;--amber-bg:#1a1100;--radius:10px;--radius-lg:16px;}
@@ -265,7 +266,10 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
         <div class="arena-hdr"><h2>live 1v1</h2><p>both cameras on &middot; AI rates faces instantly &middot; no API key needed</p></div>
 
         <div id="a-waiting" class="wait-box">
-          <div class="wait-ico">&#128247;</div>
+          <!-- Live cam preview in waiting screen -->
+          <div id="my-cam-preview" style="width:200px;height:150px;border-radius:var(--radius-lg);overflow:hidden;background:var(--bg3);margin:0 auto;position:relative">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--text3);z-index:0" id="cam-preview-ph">&#128247;</div>
+          </div>
           <p id="wait-sub">looking for an opponent...</p>
           <small>both players click ready to start a match</small>
           <div style="margin-top:1rem;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -417,6 +421,12 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
 <script>
 var SB_URL = 'https://kajpyrzljhabxmvpvphg.supabase.co', SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthanB5cnpsamhhYnhtdnB2cGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTUyODgsImV4cCI6MjA5NDQ5MTI4OH0.2fgXvxL3Wfbt4UaRVSktDw5fwvhuNO6BsVH4sVgXMBw';
 var FC = {symmetry:'#378ADD',jawline:'#1D9E75',eyes:'#EF9F27',skin:'#D4537E'};
+var supabaseClient = null;
+function initSupabaseClient(){
+  if(typeof supabase !== 'undefined' && SB_URL && SB_KEY){
+    supabaseClient = supabase.createClient(SB_URL, SB_KEY, {realtime:{params:{eventsPerSecond:10}}});
+  }
+}
 var st = {
   userId:null,accountId:null,user:null,role:'student',
   roomId:null,roomCode:null,roomName:null,
@@ -470,6 +480,7 @@ function authReq(path,body){
 
 // BOOT
 window.addEventListener('load',function(){
+  initSupabaseClient();
   var saved=localStorage.getItem('mg_session');
   if(saved){try{var sess=JSON.parse(saved);st.token=sess.token;st.accountId=sess.accountId;st.user=sess.username;st.elo=sess.elo||1200;}catch(e){localStorage.removeItem('mg_session');}}
   show('s-landing');loadStats();updateNavUser();
@@ -735,39 +746,44 @@ function startPolling(){
   lbPollTimer=setInterval(function(){if(st.roomId)renderLB();},8000);
 }
 
-// ── WEBRTC + ARENA ──
+// ── REALTIME ARENA WITH WEBRTC ──
 var arenaStream = null, arenaMatchup = null, arenaPollTimer = null;
-var pc = null; // RTCPeerConnection
-var sigPollTimer = null;
+var pc = null, rtcChannel = null, myReadyChannel = null;
 
 var ICE_SERVERS = {iceServers:[
   {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'}
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'}
 ]};
 
+var RANKS=[
+  {name:'Molecule',min:0,max:799,color:'#888'},
+  {name:'Sub3',min:800,max:999,color:'#cd7f32'},
+  {name:'LTN',min:1000,max:1199,color:'#aaa'},
+  {name:'MTN',min:1200,max:1399,color:'#fff'},
+  {name:'HTN',min:1400,max:1599,color:'#378ADD'},
+  {name:'Chadlite',min:1600,max:1799,color:'#EF9F27'},
+  {name:'Chad',min:1800,max:1999,color:'#E24B4A'},
+  {name:'Slayer',min:2000,max:99999,color:'#1D9E75'}
+];
+function getRank(elo){for(var i=RANKS.length-1;i>=0;i--){if(elo>=RANKS[i].min)return RANKS[i];}return RANKS[0];}
+
 function resetArena(){
-  stopArenaStream();
-  closeRTC();
-  arenaMatchup = null;
+  stopArenaStream();closeRTC();
+  arenaMatchup=null;
   if(arenaPollTimer){clearInterval(arenaPollTimer);arenaPollTimer=null;}
-  if(sigPollTimer){clearInterval(sigPollTimer);sigPollTimer=null;}
-  // Reset UI
-  var sections = ['a-waiting','a-scanning','a-matchup'];
-  sections.forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('a-waiting').style.display='block';
+  document.getElementById('a-scanning').style.display='none';
+  document.getElementById('a-matchup').style.display='none';
   document.getElementById('res-flash').style.display='none';
   document.getElementById('vote-btns').style.display='flex';
   var rb=document.getElementById('ready-btn');rb.disabled=false;rb.textContent="i'm ready to mog";
   document.getElementById('wait-sub').textContent='looking for an opponent...';
-  // Clear video feeds
-  var myVid=document.getElementById('my-cam');if(myVid)myVid.srcObject=null;
-  var theirVid=document.getElementById('their-cam');if(theirVid)theirVid.srcObject=null;
   document.getElementById('fl-pl').innerHTML='<div class="spill sp-lo">waiting...</div>';
   document.getElementById('fr-pl').innerHTML='<div class="spill sp-lo">waiting...</div>';
   document.getElementById('fl-ft').innerHTML='';document.getElementById('fr-ft').innerHTML='';
-  document.getElementById('fl2-pl').innerHTML='';document.getElementById('fr2-pl').innerHTML='';
-  document.getElementById('fl2-ft').innerHTML='';document.getElementById('fr2-ft').innerHTML='';
   st.voted=false;
+  if(st.userId) sbPatch('players',{id:st.userId},{ready:false});
 }
 function loadMatchup(){resetArena();}
 
@@ -777,8 +793,8 @@ function stopArenaStream(){
 
 function closeRTC(){
   if(pc){try{pc.close();}catch(e){}pc=null;}
-  // Clean up signaling rows
-  if(st.userId) sbPatch('players',{id:st.userId},{ready:false,rtc_offer:null,rtc_answer:null,rtc_ice:null});
+  if(rtcChannel){try{supabaseClient.removeChannel(rtcChannel);}catch(e){}rtcChannel=null;}
+  if(myReadyChannel){try{supabaseClient.removeChannel(myReadyChannel);}catch(e){}myReadyChannel=null;}
 }
 
 function buildPill(score){
@@ -794,119 +810,130 @@ function buildFeats(s){
   }).join('');
 }
 
+function placeVideo(videoEl, wrapId, mirror){
+  videoEl.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;'+(mirror?'transform:scaleX(-1);':'');
+  var wrap=document.getElementById(wrapId);
+  if(wrap) wrap.appendChild(videoEl);
+}
+
 function goReady(){
   var btn=document.getElementById('ready-btn');
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span>starting camera...';
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240},audio:false}).then(function(stream){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false}).then(function(stream){
     arenaStream=stream;
+    // Show my camera in waiting screen
     var myVid=document.getElementById('my-cam');
     myVid.srcObject=stream;myVid.play();
-    btn.innerHTML='<span class="spinner"></span>waiting for opponent...';
-    document.getElementById('wait-sub').textContent='camera on - waiting for opponent...';
-    // Mark ready in DB
-    sbPatch('players',{id:st.userId},{ready:true,face_overall:null,rtc_offer:null,rtc_answer:null,rtc_ice:null});
-    // Poll for opponent
-    arenaPollTimer=setInterval(function(){
-      sbGet('players',{room_id:st.roomId},100).then(function(res){
-        var others=(res.data||[]).filter(function(p){return p.id!==st.userId&&p.ready;});
-        if(others.length>0){
-          clearInterval(arenaPollTimer);arenaPollTimer=null;
-          var opp=others[0];
-          // Decide who is caller (lower id alphabetically = caller)
-          if(st.userId<opp.id){startAsOffer(opp);}
-          else{startAsAnswer(opp);}
-        }
-      });
-    },2000);
-  }).catch(function(){toast('Camera access denied.');btn.disabled=false;btn.textContent="i'm ready to mog";});
+    placeVideo(myVid,'my-cam-preview',true);
+    btn.innerHTML='<span class="spinner"></span>finding opponent...';
+    document.getElementById('wait-sub').textContent='camera on \xB7 looking for opponent in room...';
+    // Mark ready
+    sbPatch('players',{id:st.userId},{ready:true,face_overall:null});
+    // Subscribe to room's ready channel
+    subscribeReady();
+    // Check if anyone already ready
+    checkForOpponent();
+  }).catch(function(e){toast('Camera denied: '+e.message);btn.disabled=false;btn.textContent="i'm ready to mog";});
 }
 
-// OFFER SIDE (initiates WebRTC)
-function startAsOffer(opp){
-  arenaMatchup={opponent:opp,role:'offer'};
-  showScanningUI(opp);
-  pc=new RTCPeerConnection(ICE_SERVERS);
-  arenaStream.getTracks().forEach(function(t){pc.addTrack(t,arenaStream);});
-  // Collect ICE candidates
-  var iceCandidates=[];
-  pc.onicecandidate=function(e){if(e.candidate)iceCandidates.push(e.candidate.toJSON());};
-  pc.oniceconnectionstatechange=function(){
-    if(pc&&(pc.iceConnectionState==='connected'||pc.iceConnectionState==='completed')){onRTCConnected();}
-    if(pc&&(pc.iceConnectionState==='failed'||pc.iceConnectionState==='disconnected')){toast('Connection failed. Try again.');resetArena();}
-  };
-  pc.ontrack=function(e){
-    var theirVid=document.getElementById('their-cam');
-    if(theirVid&&e.streams[0]){theirVid.srcObject=e.streams[0];theirVid.play();}
-  };
-  pc.createOffer().then(function(offer){
-    return pc.setLocalDescription(offer).then(function(){
-      // Wait for ICE gathering
-      return new Promise(function(resolve){
-        setTimeout(resolve,1500);
-      });
-    });
-  }).then(function(){
-    // Save offer + ICE to DB
-    return sbPatch('players',{id:st.userId},{
-      rtc_offer:JSON.stringify({sdp:pc.localDescription,ice:iceCandidates}),
-      ready:true
-    });
-  }).then(function(){
-    // Poll for answer
-    sigPollTimer=setInterval(function(){
-      sbGet('players',{id:opp.id},1).then(function(res){
-        var p=(res.data||[])[0];
-        if(p&&p.rtc_answer){
-          clearInterval(sigPollTimer);sigPollTimer=null;
-          var data=JSON.parse(p.rtc_answer);
-          pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function(){
-            if(data.ice){data.ice.forEach(function(c){try{pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}});}
-          });
+function subscribeReady(){
+  if(!supabaseClient) return;
+  myReadyChannel=supabaseClient.channel('ready-'+st.roomId)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'players',filter:'room_id=eq.'+st.roomId},
+      function(payload){
+        var p=payload.new;
+        if(p.id!==st.userId&&p.ready&&!arenaMatchup){
+          clearInterval(arenaPollTimer);
+          initiateMatch(p);
         }
-      });
-    },1500);
+      })
+    .subscribe();
+}
+
+function checkForOpponent(){
+  sbGet('players',{room_id:st.roomId},100).then(function(res){
+    var others=(res.data||[]).filter(function(p){return p.id!==st.userId&&p.ready;});
+    if(others.length>0&&!arenaMatchup){
+      initiateMatch(others[0]);
+    } else {
+      // Keep polling as fallback
+      arenaPollTimer=setInterval(function(){
+        if(arenaMatchup) return;
+        sbGet('players',{room_id:st.roomId},100).then(function(res){
+          var others=(res.data||[]).filter(function(p){return p.id!==st.userId&&p.ready;});
+          if(others.length>0&&!arenaMatchup){clearInterval(arenaPollTimer);initiateMatch(others[0]);}
+        });
+      },3000);
+    }
   });
 }
 
-// ANSWER SIDE (responds to WebRTC offer)
-function startAsAnswer(opp){
-  arenaMatchup={opponent:opp,role:'answer'};
+function initiateMatch(opp){
+  if(arenaMatchup) return; // prevent double-init
+  arenaMatchup={opponent:opp};
+  clearInterval(arenaPollTimer);
   showScanningUI(opp);
-  // Poll for offer first
-  sigPollTimer=setInterval(function(){
-    sbGet('players',{id:opp.id},1).then(function(res){
-      var p=(res.data||[])[0];
-      if(p&&p.rtc_offer){
-        clearInterval(sigPollTimer);sigPollTimer=null;
-        var data=JSON.parse(p.rtc_offer);
-        pc=new RTCPeerConnection(ICE_SERVERS);
-        arenaStream.getTracks().forEach(function(t){pc.addTrack(t,arenaStream);});
-        var iceCandidates=[];
-        pc.onicecandidate=function(e){if(e.candidate)iceCandidates.push(e.candidate.toJSON());};
-        pc.oniceconnectionstatechange=function(){
-          if(pc&&(pc.iceConnectionState==='connected'||pc.iceConnectionState==='completed')){onRTCConnected();}
-          if(pc&&(pc.iceConnectionState==='failed'||pc.iceConnectionState==='disconnected')){toast('Connection failed. Try again.');resetArena();}
-        };
-        pc.ontrack=function(e){
-          var theirVid=document.getElementById('their-cam');
-          if(theirVid&&e.streams[0]){theirVid.srcObject=e.streams[0];theirVid.play();}
-        };
-        pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function(){
-          if(data.ice){data.ice.forEach(function(c){try{pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}});}
-          return pc.createAnswer();
-        }).then(function(answer){
-          return pc.setLocalDescription(answer).then(function(){
-            return new Promise(function(resolve){setTimeout(resolve,1500);});
-          });
+  // Set up RTC signaling channel via Supabase Realtime broadcast
+  var channelName='rtc-'+[st.userId,opp.id].sort().join('-');
+  rtcChannel=supabaseClient.channel(channelName);
+  var isCaller=st.userId<opp.id; // lower ID initiates offer
+  setupWebRTC(isCaller, opp);
+}
+
+function setupWebRTC(isCaller, opp){
+  pc=new RTCPeerConnection(ICE_SERVERS);
+  // Add local tracks
+  arenaStream.getTracks().forEach(function(t){pc.addTrack(t,arenaStream);});
+  // On remote track — show opponent's video
+  pc.ontrack=function(e){
+    if(e.streams&&e.streams[0]){
+      var theirVid=document.getElementById('their-cam');
+      theirVid.srcObject=e.streams[0];theirVid.play();
+      document.getElementById('fr-placeholder').style.display='none';
+      document.getElementById('conn-status').textContent='connected';
+      document.getElementById('conn-status').style.color='var(--green)';
+    }
+  };
+  // ICE candidates
+  pc.onicecandidate=function(e){
+    if(e.candidate&&rtcChannel){
+      rtcChannel.send({type:'broadcast',event:'ice',payload:{from:st.userId,candidate:e.candidate.toJSON()}});
+    }
+  };
+  pc.onconnectionstatechange=function(){
+    if(pc.connectionState==='failed'){toast('Connection failed. Click new match to try again.');}
+  };
+
+  // Listen for signaling messages
+  rtcChannel
+    .on('broadcast',{event:'offer'},function(payload){
+      if(payload.payload.from===st.userId) return;
+      pc.setRemoteDescription(new RTCSessionDescription(payload.payload.sdp)).then(function(){
+        return pc.createAnswer();
+      }).then(function(answer){
+        return pc.setLocalDescription(answer);
+      }).then(function(){
+        rtcChannel.send({type:'broadcast',event:'answer',payload:{from:st.userId,sdp:pc.localDescription}});
+      });
+    })
+    .on('broadcast',{event:'answer'},function(payload){
+      if(payload.payload.from===st.userId) return;
+      pc.setRemoteDescription(new RTCSessionDescription(payload.payload.sdp));
+    })
+    .on('broadcast',{event:'ice'},function(payload){
+      if(payload.payload.from===st.userId) return;
+      try{pc.addIceCandidate(new RTCIceCandidate(payload.payload.candidate));}catch(e){}
+    })
+    .subscribe(function(status){
+      if(status==='SUBSCRIBED'&&isCaller){
+        // Caller creates offer once channel is ready
+        pc.createOffer().then(function(offer){
+          return pc.setLocalDescription(offer);
         }).then(function(){
-          return sbPatch('players',{id:st.userId},{
-            rtc_answer:JSON.stringify({sdp:pc.localDescription,ice:iceCandidates}),
-            ready:true
-          });
+          rtcChannel.send({type:'broadcast',event:'offer',payload:{from:st.userId,sdp:pc.localDescription}});
         });
       }
     });
-  },1500);
 }
 
 function showScanningUI(opp){
@@ -916,48 +943,34 @@ function showScanningUI(opp){
   document.getElementById('fl-el').textContent='ELO '+(st.elo||1200);
   document.getElementById('fr-nm').textContent=esc(opp.name);
   document.getElementById('fr-el').textContent='ELO '+(opp.elo||1200);
-  // Move my video into the left fighter box
+  // Move my video into fighter box
   var myVid=document.getElementById('my-cam');
-  myVid.style.display='block';
-  myVid.style.position='absolute';myVid.style.inset='0';myVid.style.width='100%';myVid.style.height='100%';myVid.style.objectFit='cover';myVid.style.transform='scaleX(-1)';
-  document.getElementById('fl-vid-wrap').appendChild(myVid);
-  // Move their video into right fighter box when it arrives
+  placeVideo(myVid,'fl-vid-wrap',true);
+  // Put their video in right box (will populate when RTC connects)
   var theirVid=document.getElementById('their-cam');
-  theirVid.style.display='block';
-  theirVid.style.position='absolute';theirVid.style.inset='0';theirVid.style.width='100%';theirVid.style.height='100%';theirVid.style.objectFit='cover';
-  document.getElementById('fr-vid-wrap').appendChild(theirVid);
+  placeVideo(theirVid,'fr-vid-wrap',false);
+  // Scan face
   document.getElementById('my-scan-ov').style.display='flex';
-  // Start face analysis after 2s warmup
-  setTimeout(function(){runFaceAnalysis(opp);},2000);
-}
-
-function onRTCConnected(){
-  // Cameras are now live peer-to-peer
-  document.getElementById('my-scan-ov').style.display='none';
-  document.getElementById('conn-status').textContent='live';
-  document.getElementById('conn-status').style.color='var(--green)';
+  setTimeout(function(){runFaceAnalysis(opp);},2500);
 }
 
 function runFaceAnalysis(opp){
   var v=document.getElementById('my-cam');
   analyzeFaceFromVideo(v,function(scores){
     document.getElementById('my-scan-ov').style.display='none';
-    if(!scores){
+    if(!scores||scores.overall===0){
       scores={symmetry:55+Math.round(Math.random()*30),jawline:50+Math.round(Math.random()*30),eyes:55+Math.round(Math.random()*30),canthal:50+Math.round(Math.random()*30),overall:0};
       scores.overall=Math.round(scores.symmetry*0.35+scores.jawline*0.25+scores.eyes*0.25+scores.canthal*0.15);
     }
     var newElo=Math.round(900+scores.overall*4);
     st.elo=newElo;arenaMatchup.myScores=scores;
-    sbPatch('players',{id:st.userId},{
-      face_overall:scores.overall,face_symmetry:scores.symmetry,face_jawline:scores.jawline,
-      face_eyes:scores.eyes,face_skin:scores.canthal,elo:newElo,ready:false
-    });
+    sbPatch('players',{id:st.userId},{face_overall:scores.overall,face_symmetry:scores.symmetry,face_jawline:scores.jawline,face_eyes:scores.eyes,face_skin:scores.canthal,elo:newElo,ready:false});
     if(st.accountId){sbPatch('accounts',{id:st.accountId},{face_overall:scores.overall,elo:newElo});saveSession();}
     updateRankBadge();
     document.getElementById('fl-pl').innerHTML=buildPill(scores.overall);
     document.getElementById('fl-ft').innerHTML=buildFeats(scores);
-    document.getElementById('fr-pl').innerHTML='<div class="spill sp-lo"><div class="spinner"></div>waiting for opponent...</div>';
-    // Poll for opponent scan
+    document.getElementById('fr-pl').innerHTML='<div class="spill sp-lo"><div class="spinner"></div>waiting for opponent score...</div>';
+    // Poll for opponent face score
     arenaPollTimer=setInterval(function(){
       sbGet('players',{id:opp.id},1).then(function(pres){
         var p=(pres.data||[])[0];
@@ -978,11 +991,11 @@ function openVoting(opp,myScores,myElo){
     st.matchup={id:mid,L:{id:st.userId,name:st.user,elo:myElo,wins:0,losses:0,account_id:st.accountId},R:{id:opp.id,name:opp.name,elo:opp.elo||1200,wins:opp.wins||0,losses:opp.losses||0,account_id:opp.account_id}};
     document.getElementById('a-scanning').style.display='none';
     document.getElementById('a-matchup').style.display='flex';
-    // Move live video feeds to voting UI
+    // Move videos to voting UI
     var myVid=document.getElementById('my-cam');
     var theirVid=document.getElementById('their-cam');
-    document.getElementById('fl2-vid-wrap').appendChild(myVid);
-    document.getElementById('fr2-vid-wrap').appendChild(theirVid);
+    placeVideo(myVid,'fl2-vid-wrap',true);
+    placeVideo(theirVid,'fr2-vid-wrap',false);
     document.getElementById('fl2-nm').textContent=esc(st.user);
     document.getElementById('fl2-el').textContent='ELO '+myElo;
     document.getElementById('fl2-pl').innerHTML=buildPill(myScores.overall);
@@ -1023,7 +1036,6 @@ function castVote(side){
   document.getElementById('rf-s').textContent='+'+delta+' ELO - click new match to go again';
   document.getElementById('res-flash').style.display='block';
   if(arenaPollTimer){clearInterval(arenaPollTimer);arenaPollTimer=null;}
-  if(sigPollTimer){clearInterval(sigPollTimer);sigPollTimer=null;}
   renderLB();
 }
 
