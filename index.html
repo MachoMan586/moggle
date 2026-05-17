@@ -140,6 +140,12 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
 .rpt-opt:hover{border-color:var(--red);color:var(--red)}.rpt-opt input{accent-color:var(--red)}.modal-btns{display:flex;gap:8px;justify-content:flex-end}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 16px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:300;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.mog-bar-wrap{width:100%;max-width:660px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+.mog-bar-label{display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);margin-bottom:6px}
+.mog-bar-track{height:12px;background:var(--bg3);border-radius:99px;overflow:hidden;display:flex}
+.mog-bar-left{height:100%;background:var(--red);border-radius:99px 0 0 99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.mog-bar-right{height:100%;background:var(--blue,#378ADD);border-radius:0 99px 99px 0;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.mog-verdict{text-align:center;font-size:13px;font-weight:700;margin-top:8px;font-family:'DM Mono',monospace}
 /* RANKS */
 .rank-tiers{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:.5rem}
 .rank-tier{font-size:11px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:99px;border:1px solid var(--border);background:var(--bg3)}
@@ -342,15 +348,29 @@ button{font-family:'Syne',sans-serif;cursor:pointer}input,textarea{font-family:'
               </div>
             </div>
           </div>
+          <!-- MOG BAR -->
+          <div class="mog-bar-wrap" id="mog-bar-wrap" style="display:none">
+            <div class="mog-bar-label">
+              <span id="mog-bar-left-name">-</span>
+              <span id="mog-bar-verdict" style="color:var(--amber)">AI score</span>
+              <span id="mog-bar-right-name">-</span>
+            </div>
+            <div class="mog-bar-track">
+              <div class="mog-bar-left" id="mog-bar-left" style="width:50%"></div>
+              <div class="mog-bar-right" id="mog-bar-right" style="width:50%"></div>
+            </div>
+            <div class="mog-verdict" id="mog-bar-result"></div>
+          </div>
+
           <div id="res-flash" class="result-flash">
             <div class="rf-w" id="rf-w">-</div>
             <div class="rf-s" id="rf-s">click new match to go again</div>
           </div>
           <div class="vote-btns" id="vote-btns">
             <button class="vote-btn" onclick="castVote('left')">&larr; left mogging</button>
-            <button class="skip-btn" onclick="resetArena()">new match</button>
             <button class="vote-btn" onclick="castVote('right')">right mogging &rarr;</button>
           </div>
+          <button class="btn btn-primary" id="new-match-btn" style="display:none;margin-top:.5rem" onclick="resetArena()">&#8635; new match</button>
         </div>
       </div>
 
@@ -993,11 +1013,36 @@ function castVote(side){
   if(st.voted||!st.matchup) return;
   st.voted=true;
   var m=st.matchup;
-  var winner=side==='left'?m.L:m.R; var loser=side==='left'?m.R:m.L;
+  var L=m.L, R=m.R;
   var voteCol=side==='left'?'votes_left':'votes_right';
-  if(m.id){var upd={winner_id:winner.id,active:false};upd[voteCol]=1;sbPatch('matchups',{id:m.id},upd);}
+  if(m.id){var upd={winner_id:(side==='left'?L:R).id,active:false};upd[voteCol]=1;sbPatch('matchups',{id:m.id},upd);}
+
+  // AI score (70%) + human vote (30%)
+  var lScore = L.face_overall||0, rScore = R.face_overall||0;
+  var aiDiff = lScore - rScore; // positive = left winning on AI
+  var humanBoost = side==='left'?15:-15; // human vote adds 15 pts to chosen side
+  var totalLeft = aiDiff*0.7 + humanBoost; // positive = left wins overall
+  var winner = totalLeft>0?L:R;
+  var loser = totalLeft>0?R:L;
+
+  // Mog bar percentages
+  var leftPct = Math.round(50 + Math.min(45, Math.max(-45, totalLeft)));
+  var rightPct = 100-leftPct;
+  document.getElementById('mog-bar-left').style.width=leftPct+'%';
+  document.getElementById('mog-bar-right').style.width=rightPct+'%';
+  document.getElementById('mog-bar-left-name').textContent=esc(L.name);
+  document.getElementById('mog-bar-right-name').textContent=esc(R.name);
+  document.getElementById('mog-bar-verdict').textContent='AI '+lScore+' vs '+rScore+' + vote';
+  var mogGap = Math.abs(lScore-rScore);
+  var mogWord = mogGap>=20?'hard mogging':mogGap>=10?'mogging':'slightly mogging';
+  document.getElementById('mog-bar-result').textContent=esc(winner.name)+' is '+mogWord;
+  document.getElementById('mog-bar-wrap').style.display='block';
+
   var K=32,wE=winner.elo||1200,lE=loser.elo||1200;
-  var exp=1/(1+Math.pow(10,(lE-wE)/400)); var delta=Math.round(K*(1-exp));
+  var exp=1/(1+Math.pow(10,(lE-wE)/400));
+  // ELO delta boosted by AI score gap
+  var aiBoost=Math.round(mogGap/10);
+  var delta=Math.round(K*(1-exp))+aiBoost;
   var newWElo=wE+delta, newLElo=Math.max(800,lE-delta);
   sbPatch('players',{id:winner.id},{elo:newWElo,wins:(winner.wins||0)+1});
   sbPatch('players',{id:loser.id},{elo:newLElo,losses:(loser.losses||0)+1});
@@ -1005,13 +1050,14 @@ function castVote(side){
   if(loser.account_id)sbPatch('accounts',{id:loser.account_id},{elo:newLElo,losses:(loser.losses||0)+1});
   if(winner.id===st.userId){st.elo=newWElo;saveSession();updateRankBadge();}
   if(loser.id===st.userId){st.elo=newLElo;saveSession();updateRankBadge();}
-  document.getElementById('fl2').className='fighter '+(side==='left'?'fw':'fl');
-  document.getElementById('fr2').className='fighter '+(side==='right'?'fw':'fl');
+  document.getElementById('fl2').className='fighter '+(winner.id===L.id?'fw':'fl');
+  document.getElementById('fr2').className='fighter '+(winner.id===R.id?'fw':'fl');
   document.getElementById('vote-btns').style.display='none';
   var wrank=getRank(newWElo);
-  document.getElementById('rf-w').textContent=esc(winner.name)+' is mogging - '+wrank.name;
-  document.getElementById('rf-s').textContent='+'+delta+' ELO - click new match to go again';
+  document.getElementById('rf-w').textContent=esc(winner.name)+' is mogging - '+wrank.name+' +'+delta+' ELO';
+  document.getElementById('rf-s').textContent='AI score: '+lScore+' vs '+rScore+' (AI=70%, vote=30%)';
   document.getElementById('res-flash').style.display='block';
+  document.getElementById('new-match-btn').style.display='inline-block';
   if(arenaPollTimer){clearInterval(arenaPollTimer);arenaPollTimer=null;}
   renderLB();
 }
