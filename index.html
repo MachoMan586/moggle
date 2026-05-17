@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Moggle</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -506,13 +506,6 @@ input,textarea{font-family:'DM Mono',monospace}
 var SB_URL='https://kajpyrzljhabxmvpvphg.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthanB5cnpsamhhYnhtdnB2cGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTUyODgsImV4cCI6MjA5NDQ5MTI4OH0.2fgXvxL3Wfbt4UaRVSktDw5fwvhuNO6BsVH4sVgXMBw';
 
-var sbClient = null;
-function initSbClient(){
-  if(typeof supabase !== 'undefined'){
-    sbClient = supabase.createClient(SB_URL, SB_KEY);
-  }
-}
-
 var RANKS=[
   {name:'Molecule',min:0,color:'#888'},{name:'Sub3',min:800,color:'#cd7f32'},
   {name:'LTN',min:1000,color:'#aaa'},{name:'MTN',min:1200,color:'#fff'},
@@ -578,7 +571,7 @@ function authReq(path,body){
 window.addEventListener('load',function(){
   var s=localStorage.getItem('mg_s');
   if(s){try{var d=JSON.parse(s);st.token=d.t;st.accountId=d.a;st.user=d.u;st.elo=d.e||1200;}catch(e){localStorage.removeItem('mg_s');}}
-  initSbClient();show('s-land');loadStats();updateNav();initFM();
+  show('s-land');loadStats();updateNav();initFM();
 });
 window.addEventListener('beforeunload',function(){
   if(st.userId)sbPatch('players',{id:st.userId},{online:false,ready:false});
@@ -815,6 +808,7 @@ function analyzeFrame(videoEl,cb){
 
 // ── ARENA ──
 function stopArena(){
+  stopRTC();
   [arenaTimer,scanTimer,oppScoreTimer,matchPollTimer].forEach(function(t){if(t)clearInterval(t);});
   arenaTimer=scanTimer=oppScoreTimer=matchPollTimer=null;
   if(arenaStream){arenaStream.getTracks().forEach(function(t){t.stop();});arenaStream=null;}
@@ -928,147 +922,98 @@ function startMatch(opp){
   },1000);
 }
 
+
+// ── PEERJS + LIVE MATCH ──
+var peer = null, peerConn = null, peerCallObj = null;
+
 function initRTC(opp, isCaller){
-  pc = new RTCPeerConnection({
-    iceServers:[
+  // Each player's PeerJS ID = their player row ID
+  peer = new Peer(st.userId, {
+    host: '0.peerjs.com', port: 443, path: '/', secure: true,
+    config: {iceServers:[
       {urls:'stun:stun.l.google.com:19302'},
       {urls:'stun:stun1.l.google.com:19302'},
       {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
       {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
       {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
-    ],
-    iceCandidatePoolSize: 10
+    ]}
   });
 
-  arenaStream.getTracks().forEach(function(t){ pc.addTrack(t, arenaStream); });
-
-  pc.ontrack = function(e){
-    if(e.streams && e.streams[0]){
-      var v = document.getElementById('vid-opp');
-      v.srcObject = e.streams[0];
-      v.play().catch(function(){});
-      document.getElementById('opp-ph').style.display = 'none';
-      document.getElementById('conn-dot').className = 'conn-dot live';
-    }
-  };
-
-  pc.onconnectionstatechange = function(){
-    console.log('[RTC] connection state:', pc.connectionState);
-    document.getElementById('dbg').textContent = 'RTC: ' + pc.connectionState;
-    if(pc.connectionState === 'connected'){
-      document.getElementById('conn-dot').className = 'conn-dot live';
-    }
-    if(pc.connectionState === 'failed'){
-      toast('P2P failed - scores still live');
-    }
-  };
-  pc.oniceconnectionstatechange = function(){
-    console.log('[RTC] ICE state:', pc.iceConnectionState);
-    document.getElementById('dbg').textContent = 'ICE: ' + pc.iceConnectionState;
-  };
-
-  // Use Supabase Realtime broadcast for instant signaling
-  var channelName = 'rtc-' + [st.userId, opp.id].sort().join('-');
-  var sigCh = null;
-
-  if(sbClient){
-    sigCh = sbClient.channel(channelName, {config:{broadcast:{self:false}}});
-
-    sigCh.on('broadcast', {event:'offer'}, function(payload){
-      console.log('[RTC] received offer from', payload.payload.from);
-      document.getElementById('dbg').textContent = 'got offer, sending answer...';
-      if(payload.payload.from === st.userId) return;
-      pc.setRemoteDescription(new RTCSessionDescription(payload.payload.sdp))
-        .then(function(){ return pc.createAnswer(); })
-        .then(function(a){ return pc.setLocalDescription(a); })
-        .then(function(){
-          sigCh.send({type:'broadcast', event:'answer', payload:{from:st.userId, sdp:pc.localDescription}});
-        });
-    });
-
-    sigCh.on('broadcast', {event:'answer'}, function(payload){
-      console.log('[RTC] received answer from', payload.payload.from);
-      document.getElementById('dbg').textContent = 'got answer, connecting...';
-      if(payload.payload.from === st.userId) return;
-      pc.setRemoteDescription(new RTCSessionDescription(payload.payload.sdp));
-    });
-
-    sigCh.on('broadcast', {event:'ice'}, function(payload){
-      if(payload.payload.from === st.userId) return;
-      try{ pc.addIceCandidate(new RTCIceCandidate(payload.payload.candidate)); }catch(e){}
-    });
-
-    pc.onicecandidate = function(e){
-      if(e.candidate && sigCh){
-        sigCh.send({type:'broadcast', event:'ice', payload:{from:st.userId, candidate:e.candidate.toJSON()}});
-      }
-    };
-
-    sigCh.subscribe(function(status){
-      console.log('[RTC] channel status:', status, 'isCaller:', isCaller);
-      document.getElementById('dbg').textContent = 'RTC channel: ' + status;
-      if(status === 'SUBSCRIBED' && isCaller){
-        pc.createOffer().then(function(o){
-          return pc.setLocalDescription(o);
-        }).then(function(){
-          console.log('[RTC] sending offer');
-          document.getElementById('dbg').textContent = 'sent offer, waiting for answer...';
-          sigCh.send({type:'broadcast', event:'offer', payload:{from:st.userId, sdp:pc.localDescription}});
-        });
-      }
-    });
-
-  } else {
-    // Fallback: DB polling if Realtime unavailable
-    pc.onicecandidate = function(e){ if(e.candidate) iceBuf.push(e.candidate.toJSON()); };
-    function waitAndSave(role){
-      var w = 0;
-      var chk = setInterval(function(){
-        w += 300;
-        if(pc.iceGatheringState === 'complete' || w >= 4000){
-          clearInterval(chk);
-          var payload = JSON.stringify({sdp:pc.localDescription, ice:iceBuf});
-          iceBuf = [];
-          if(role === 'offer'){
-            sbPatch('players',{id:st.userId},{rtc_offer:payload});
-            var ap = setInterval(function(){
-              sbGet('players',{id:opp.id},1).then(function(r){
-                var p = (r.data||[])[0];
-                if(p && p.rtc_answer){
-                  clearInterval(ap);
-                  var d = JSON.parse(p.rtc_answer);
-                  pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
-                    (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
-                  });
-                }
-              });
-            }, 500);
-          } else {
-            sbPatch('players',{id:st.userId},{rtc_answer:payload});
-          }
-        }
-      }, 300);
-    }
-    if(isCaller){
-      pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).then(function(){ waitAndSave('offer'); });
+  peer.on('error', function(err){
+    // ID taken - use random suffix
+    if(err.type === 'unavailable-id'){
+      peer.destroy();
+      peer = new Peer(st.userId + '-' + Math.random().toString(36).slice(2,6), {
+        host:'0.peerjs.com', port:443, path:'/', secure:true
+      });
+      setupPeer(opp, isCaller);
     } else {
-      var op = setInterval(function(){
-        sbGet('players',{id:opp.id},1).then(function(r){
-          var p = (r.data||[])[0];
-          if(p && p.rtc_offer){
-            clearInterval(op);
-            var d = JSON.parse(p.rtc_offer);
-            pc.setRemoteDescription(new RTCSessionDescription(d.sdp)).then(function(){
-              (d.ice||[]).forEach(function(ic){try{pc.addIceCandidate(new RTCIceCandidate(ic));}catch(e){}});
-              return pc.createAnswer();
-            }).then(function(a){ return pc.setLocalDescription(a); }).then(function(){ waitAndSave('answer'); });
-          }
-        });
-      }, 500);
+      console.log('[PEER] error:', err.type, err.message);
+      document.getElementById('dbg').textContent = 'peer error: ' + err.type;
     }
-  }
+  });
+
+  peer.on('open', function(id){
+    console.log('[PEER] open, id:', id);
+    document.getElementById('dbg').textContent = 'peer ready, ' + (isCaller ? 'calling...' : 'waiting for call...');
+    // Save our peer ID to DB so opponent can find us
+    sbPatch('players', {id: st.userId}, {rtc_offer: id});
+    setupPeer(opp, isCaller);
+  });
+
+  // Receive incoming call (answer side)
+  peer.on('call', function(call){
+    console.log('[PEER] incoming call');
+    document.getElementById('dbg').textContent = 'got call, answering...';
+    peerCallObj = call;
+    call.answer(arenaStream);
+    call.on('stream', function(remoteStream){
+      console.log('[PEER] got remote stream');
+      showRemoteStream(remoteStream);
+    });
+    call.on('error', function(e){ console.log('[PEER] call error:', e); });
+  });
 }
 
+function setupPeer(opp, isCaller){
+  if(!isCaller) return; // answer side just waits for call
+  // Caller polls for opponent peer ID then calls
+  var attempts = 0;
+  var pollId = setInterval(function(){
+    attempts++;
+    sbGet('players', {id: opp.id}, 1).then(function(r){
+      var p = (r.data||[])[0];
+      var peerId = p && p.rtc_offer;
+      document.getElementById('dbg').textContent = 'finding opponent peer... #' + attempts;
+      if(peerId && peerId !== st.userId){
+        clearInterval(pollId);
+        console.log('[PEER] calling peer:', peerId);
+        document.getElementById('dbg').textContent = 'calling peer...';
+        var call = peer.call(peerId, arenaStream);
+        peerCallObj = call;
+        call.on('stream', function(remoteStream){
+          console.log('[PEER] got remote stream from call');
+          showRemoteStream(remoteStream);
+        });
+        call.on('error', function(e){ console.log('[PEER] call error:', e); });
+      }
+    });
+  }, 800);
+}
+
+function showRemoteStream(stream){
+  var v = document.getElementById('vid-opp');
+  v.srcObject = stream;
+  v.play().catch(function(){});
+  document.getElementById('opp-ph').style.display = 'none';
+  document.getElementById('conn-dot').className = 'conn-dot live';
+  document.getElementById('dbg').textContent = 'live!';
+}
+
+function stopRTC(){
+  if(peerCallObj){ try{peerCallObj.close();}catch(e){} peerCallObj = null; }
+  if(peer){ try{peer.destroy();}catch(e){} peer = null; }
+}
 
 
 function startLive(opp){
@@ -1133,6 +1078,7 @@ function endMatch(opp){
   document.getElementById('timer').classList.remove('pulse');
   document.getElementById('phase').textContent='match over \xB7 vote now';
   var myS=myLiveScore||60;
+  var myPSL=Math.round(myS/10*10)/10; // keep as 0-100 internally, show as PSL
   var newElo=Math.round(900+myS*4);st.elo=newElo;
   sbPatch('players',{id:st.userId},{face_overall:myS,elo:newElo,ready:false});
   if(st.accountId){sbPatch('accounts',{id:st.accountId},{face_overall:myS,elo:newElo});saveSession();}
@@ -1148,7 +1094,9 @@ function openVoting(opp,myScore,myElo){
   sbPost('matchups',{room_id:st.roomId,left_id:st.userId,right_id:opp.id,votes_left:0,votes_right:0,active:true}).then(function(r){
     var mup=Array.isArray(r.data)?r.data[0]:r.data;
     var mid=mup&&mup.id;
-    st.matchup={id:mid,L:{id:st.userId,name:st.user,elo:myElo,wins:0,losses:0,account_id:st.accountId,face:myScore},R:{id:opp.id,name:opp.name,elo:opp.elo||1200,wins:opp.wins||0,losses:opp.losses||0,account_id:opp.account_id,face:opp.face_overall||0}};
+    // Convert 0-100 scores to PSL 0-10 scale for display
+  var myPSL2=Math.round(myScore/10)/1, oppPSL=Math.round((opp.face_overall||0)/10)/1;
+  st.matchup={id:mid,L:{id:st.userId,name:st.user,elo:myElo,wins:0,losses:0,account_id:st.accountId,face:myPSL2},R:{id:opp.id,name:opp.name,elo:opp.elo||1200,wins:opp.wins||0,losses:opp.losses||0,account_id:opp.account_id,face:oppPSL}};
     document.getElementById('vote-btns').style.display='flex';
     document.getElementById('f-left').classList.add('clickable');
     document.getElementById('f-right').classList.add('clickable');
@@ -1162,48 +1110,46 @@ function openVoting(opp,myScore,myElo){
 }
 
 function castVote(side){
-  if(st.voted||!st.matchup)return;
+  // Omoggle style: audience vote decides winner, AI score shown after
+  if(st.voted||!st.matchup) return;
   st.voted=true;
-  var m=st.matchup;var L=m.L,R=m.R;
+  var m=st.matchup; var L=m.L, R=m.R;
+  var winner=side==='left'?L:R;
+  var loser=side==='left'?R:L;
   var voteCol=side==='left'?'votes_left':'votes_right';
-  if(m.id){var upd={winner_id:(side==='left'?L:R).id,active:false};upd[voteCol]=1;sbPatch('matchups',{id:m.id},upd);}
-  // AI 70% + vote 30%
-  var aiDiff=L.face-R.face;
-  var humanBoost=side==='left'?15:-15;
-  var total=aiDiff*0.7+humanBoost;
-  var winner=total>=0?L:R;var loser=total>=0?R:L;
-  var lp=Math.round(50+Math.min(45,Math.max(-45,total)));
+  if(m.id){ var upd={winner_id:winner.id}; upd[voteCol]=1; sbPatch('matchups',{id:m.id},upd); }
+  // ELO exchange
+  var K=32, wE=winner.elo||1200, lE=loser.elo||1200;
+  var exp=1/(1+Math.pow(10,(lE-wE)/400));
+  var delta=Math.round(K*(1-exp));
+  var nwE=wE+delta, nlE=Math.max(800,lE-delta);
+  sbPatch('players',{id:winner.id},{elo:nwE,wins:(winner.wins||0)+1});
+  sbPatch('players',{id:loser.id},{elo:nlE,losses:(loser.losses||0)+1});
+  if(winner.account_id) sbPatch('accounts',{id:winner.account_id},{elo:nwE,wins:(winner.wins||0)+1});
+  if(loser.account_id) sbPatch('accounts',{id:loser.account_id},{elo:nlE,losses:(loser.losses||0)+1});
+  if(winner.id===st.userId){ st.elo=nwE; saveSession(); updateElo(); }
+  if(loser.id===st.userId){ st.elo=nlE; saveSession(); updateElo(); }
+  // Mog bar - audience voted
+  var lp = side==='left'?65:35;
   document.getElementById('mb-l').style.width=lp+'%';
   document.getElementById('mb-r').style.width=(100-lp)+'%';
   document.getElementById('mb-ln').textContent=esc(L.name);
   document.getElementById('mb-rn').textContent=esc(R.name);
-  var gap=Math.abs(L.face-R.face);
-  var word=gap>=20?'hard mogging':gap>=10?'mogging':'slightly mogging';
-  document.getElementById('mb-v').textContent=esc(winner.name)+' is '+word;
+  // Reveal AI scores (PSL 0-10) after vote
+  var lPSL=L.face||0, rPSL=R.face||0;
+  document.getElementById('mb-v').textContent=esc(winner.name)+' mogged · PSL: '+lPSL+' vs '+rPSL;
   document.getElementById('mog-bar').style.display='block';
-  var K=32,wE=winner.elo||1200,lE=loser.elo||1200;
-  var exp=1/(1+Math.pow(10,(lE-wE)/400));
-  var delta=Math.round(K*(1-exp))+Math.round(gap/10);
-  var nwE=wE+delta,nlE=Math.max(800,lE-delta);
-  sbPatch('players',{id:winner.id},{elo:nwE,wins:(winner.wins||0)+1});
-  sbPatch('players',{id:loser.id},{elo:nlE,losses:(loser.losses||0)+1});
-  if(winner.account_id)sbPatch('accounts',{id:winner.account_id},{elo:nwE,wins:(winner.wins||0)+1});
-  if(loser.account_id)sbPatch('accounts',{id:loser.account_id},{elo:nlE,losses:(loser.losses||0)+1});
-  if(winner.id===st.userId){st.elo=nwE;saveSession();updateElo();}
-  if(loser.id===st.userId){st.elo=nlE;saveSession();updateElo();}
   document.getElementById('f-left').className='fighter'+(winner.id===L.id?' fw':' fl');
   document.getElementById('f-right').className='fighter'+(winner.id===R.id?' fw':' fl');
   document.getElementById('vote-btns').style.display='none';
   var wr=getRank(nwE);
-  document.getElementById('result-w').textContent=esc(winner.name)+' is mogging - '+wr.name;
-  document.getElementById('result-s').textContent='+'+delta+' ELO \xB7 AI score: '+L.face+' vs '+R.face+' (AI=70%, vote=30%)';
+  document.getElementById('result-w').textContent=esc(winner.name)+' mogged · now '+wr.name;
+  document.getElementById('result-s').textContent='+'+delta+' ELO · audience voted · PSL scores revealed';
   document.getElementById('result').style.display='block';
   document.getElementById('new-match-btn').style.display='inline-block';
   renderLB();
 }
 
-// ── CHAT ──
-var chatModeVal='match';
 function setChatMode(m){
   chatModeVal=m;
   document.getElementById('cm-match').classList.toggle('active',m==='match');
